@@ -1,6 +1,6 @@
-import os
-from gi.repository import Gtk, Adw
 from plugins.com_imdevinc_StreamControllerTwitchPlugin.TwitchActionBase import TwitchActionBase
+import os
+from gi.repository import Adw
 
 import gi
 gi.require_version("Gtk", "4.0")

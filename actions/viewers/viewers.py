@@ -1,7 +1,8 @@
-from plugins.com_imdevinc_StreamControllerTwitchPlugin.TwitchActionBase import TwitchActionBase
 import threading
 import time
 import os
+
+from plugins.com_imdevinc_StreamControllerTwitchPlugin.TwitchActionBase import TwitchActionBase
 
 
 class Viewers(TwitchActionBase):

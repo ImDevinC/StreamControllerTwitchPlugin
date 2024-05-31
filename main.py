@@ -1,3 +1,5 @@
+import os
+
 # Import StreamController modules
 from src.backend.PluginManager.PluginBase import PluginBase
 from src.backend.PluginManager.ActionHolder import ActionHolder
@@ -7,8 +9,7 @@ from .actions.message.message import SendMessage
 from .actions.viewers.viewers import Viewers
 from .actions.marker.marker import Marker
 from .actions.chat_mode.chat_mode import ChatMode
-
-import os
+from .actions.clip.clip import Clip
 
 
 class PluginTemplate(PluginBase):
@@ -27,7 +28,7 @@ class PluginTemplate(PluginBase):
             plugin_base=self,
             action_base=SendMessage,
             action_id="com_imdevinc_StreamControllerTwitchPlugin::SendMessage",
-            action_name="Send Message",
+            action_name="Send Chat Message",
         )
         self.add_action_holder(self.message_action_holder)
 
@@ -35,7 +36,7 @@ class PluginTemplate(PluginBase):
             plugin_base=self,
             action_base=Viewers,
             action_id="com_imdevinc_StreamControllerTwitchPlugin::Viewers",
-            action_name="Viewers",
+            action_name="Show Viewers",
         )
         self.add_action_holder(self.viewer_action_holder)
 
@@ -43,7 +44,7 @@ class PluginTemplate(PluginBase):
             plugin_base=self,
             action_base=Marker,
             action_id="com_imdevinc_StreamControllerTwitchPlugin::Marker",
-            action_name="Marker"
+            action_name="Create Stream Marker"
         )
         self.add_action_holder(self.marker_action_holder)
 
@@ -51,9 +52,18 @@ class PluginTemplate(PluginBase):
             plugin_base=self,
             action_base=ChatMode,
             action_id="com_imdevinc_StreamControllerTwitchPlugin::ChatMode",
-            action_name="Chat Mode"
+            action_name="Toggle Chat Mode"
         )
         self.add_action_holder(self.chat_mode_action_holder)
+
+        self.clip_action_holder = ActionHolder(
+            plugin_base=self,
+            action_base=Clip,
+            action_id="com_imdevinc_StreamControllerTwitchPlugin::Clip",
+            action_name="Create Clip"
+        )
+        self.add_action_holder(self.clip_action_holder)
+
         # Register plugin
         self.register(
             plugin_name="Twitch Integration",

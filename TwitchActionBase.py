@@ -1,4 +1,3 @@
-from loguru import logger as log
 from src.backend.PluginManager.ActionBase import ActionBase
 from gi.repository import Gtk, Adw
 import gi
@@ -9,10 +8,10 @@ gi.require_version("Adw", "1")
 class TwitchActionBase(ActionBase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.plugin_base.backend.set_auth_callback(self.auth_callback)
+        self.status_label = None
 
     def get_config_rows(self) -> list:
-        self.plugin_base.backend.set_auth_callback(self.auth_callback)
-
         validate_token = self.plugin_base.backend.validate_token()
         if not validate_token:
             label = "actions.base.status.no-credentials"
@@ -75,6 +74,8 @@ class TwitchActionBase(ActionBase):
             settings['client_id'], settings['client_secret'])
 
     def set_status(self, message: str, is_error: bool = False):
+        if not self.status_label:
+            return
         self.status_label.set_label(message)
         if is_error:
             self.status_label.remove_css_class("green")

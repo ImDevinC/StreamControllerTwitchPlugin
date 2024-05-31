@@ -1,11 +1,11 @@
-from streamcontroller_plugin_tools import BackendBase
-import json
 
 import webbrowser
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs, urlencode
-import requests
 import threading
+import requests
+
+from streamcontroller_plugin_tools import BackendBase
 
 
 def make_handler(backend: 'Backend', client_id: str, client_secret: str):
@@ -60,6 +60,7 @@ class Backend(BackendBase):
         self.user_id: str = ""
         self.client_id: str = ""
         self.client_secret: str = ""
+        self.auth_flow_started: bool = False
 
     def set_error_callback(self, callback: callable):
         self.error_callback = callback
@@ -96,6 +97,7 @@ class Backend(BackendBase):
         return r.json()
 
     def show_error(self, message: str) -> None:
+        self.auth_flow_started = False
         print(message)
         if self.error_callback:
             self.error_callback()
@@ -127,13 +129,16 @@ class Backend(BackendBase):
         self.client_secret = client_secret
 
     def start_auth_flow(self, client_id: str, client_secret: str) -> None:
+        if self.auth_flow_started:
+            return
+        self.auth_flow_started = True
         self.client_id = client_id
         self.client_secret = client_secret
         params = {
             'client_id': client_id,
             'redirect_uri': 'http://localhost:3000/auth',
             'response_type': 'code',
-            'scope': 'user:write:chat channel:manage:broadcast moderator:manage:chat_settings'
+            'scope': 'user:write:chat channel:manage:broadcast moderator:manage:chat_settings clips:edit'
         }
         encoded_params = urlencode(params)
         webbrowser.open(
@@ -145,6 +150,7 @@ class Backend(BackendBase):
         thread.start()
 
     def set_tokens(self, access_token: str, refresh_token: str) -> None:
+        self.auth_flow_started = False
         self.access_token = access_token
         self.refresh_token = refresh_token
         if not self.validate_token():
@@ -224,6 +230,16 @@ class Backend(BackendBase):
         resp = self.do_twitch_api_patch(f'https://api.twitch.tv/helix/chat/settings?{urlencode(params)}', body={
             mode: new
         })
+        if 'error' in resp:
+            print(resp['error'])
+            raise Exception(resp['error'])
+
+    def create_clip(self) -> None:
+        params = {
+            'broadcaster_id': self.user_id
+        }
+        resp = self.do_twitch_api_post(
+            f'https://api.twitch.tv/helix/clips?{urlencode(params)}', body=None)
         if 'error' in resp:
             print(resp['error'])
             raise Exception(resp['error'])

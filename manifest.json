@@ -1,6 +1,6 @@
 {
-    "version": "",
+    "version": "1.0.0",
     "thumbnail": "",
-    "id": "",
-    "name": ""
+    "id": "com_imdevinc_StreamControllerTwitchPlugin",
+    "name": "Twitch Integration"
 }

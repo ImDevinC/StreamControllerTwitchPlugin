@@ -4,6 +4,7 @@ This plugin adds the ability to interact with your Twitch stream in a variety of
 * Create stream marker
 * Send a message to your stream
 * See number of viewers on your stream
+* Toggle Follower Only, Subscriber Only, Emote Only, and Slow Mode
 
 ## Setup
 This plugin does require you to create a Twitch app in your account. This can be done at https://dev.twitch.tv/console/apps/create. Name

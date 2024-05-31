@@ -111,6 +111,17 @@ class Backend(BackendBase):
         }, timeout=5)
         return r.json()
 
+    def do_twitch_api_patch(self, path: str, body: dict) -> dict:
+        if not self.validate_token():
+            if not self.refresh_token:
+                self.start_auth_flow(self.client_id, self.client_secret)
+                return
+        r = requests.patch(path, json=body, headers={
+            'Authorization': f'Bearer {self.access_token}',
+            'Client-Id': self.client_id,
+        }, timeout=5)
+        return r.json()
+
     def set_client_creds(self, client_id: str, client_secret: str) -> None:
         self.client_id = client_id
         self.client_secret = client_secret
@@ -122,7 +133,7 @@ class Backend(BackendBase):
             'client_id': client_id,
             'redirect_uri': 'http://localhost:3000/auth',
             'response_type': 'code',
-            'scope': 'user:write:chat channel:manage:broadcast'
+            'scope': 'user:write:chat channel:manage:broadcast moderator:manage:chat_settings'
         }
         encoded_params = urlencode(params)
         webbrowser.open(
@@ -156,11 +167,13 @@ class Backend(BackendBase):
         return True
 
     def send_message(self, message: str) -> None:
-        self.do_twitch_api_post('https://api.twitch.tv/helix/chat/messages', body={
+        resp = self.do_twitch_api_post('https://api.twitch.tv/helix/chat/messages', body={
             'broadcaster_id': self.user_id,
             'sender_id': self.user_id,
             'message': message
         })
+        if 'error' in resp:
+            raise Exception(resp['error'])
 
     def get_viewers(self) -> int:
         body = {
@@ -182,6 +195,37 @@ class Backend(BackendBase):
                 'user_id': self.user_id
             })
         if 'error' in resp:
+            raise Exception(resp['error'])
+
+    def get_chat_settings(self) -> dict:
+        params = {
+            'broadcaster_id': self.user_id,
+            'moderator_id': self.user_id
+        }
+        resp = self.do_twitch_api_get(
+            f'https://api.twitch.tv/helix/chat/settings?{urlencode(params)}')
+        if 'error' in resp:
+            raise Exception(resp['error'])
+        payload = resp['data'][0]
+        return {
+            'emote_mode': payload['emote_mode'],
+            'follower_mode': payload['follower_mode'],
+            'slow_mode': payload['slow_mode'],
+            'subscriber_mode': payload['subscriber_mode']
+        }
+
+    def toggle_chat_mode(self, mode: str) -> None:
+        existing = self.get_chat_settings()
+        new = not existing[mode]
+        params = {
+            'broadcaster_id': self.user_id,
+            'moderator_id': self.user_id
+        }
+        resp = self.do_twitch_api_patch(f'https://api.twitch.tv/helix/chat/settings?{urlencode(params)}', body={
+            mode: new
+        })
+        if 'error' in resp:
+            print(resp['error'])
             raise Exception(resp['error'])
 
 

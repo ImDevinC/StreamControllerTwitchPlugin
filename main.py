@@ -6,6 +6,7 @@ from src.backend.PluginManager.ActionHolder import ActionHolder
 from .actions.message.message import SendMessage
 from .actions.viewers.viewers import Viewers
 from .actions.marker.marker import Marker
+from .actions.chat_mode.chat_mode import ChatMode
 
 import os
 
@@ -46,6 +47,13 @@ class PluginTemplate(PluginBase):
         )
         self.add_action_holder(self.marker_action_holder)
 
+        self.chat_mode_action_holder = ActionHolder(
+            plugin_base=self,
+            action_base=ChatMode,
+            action_id="com_imdevinc_StreamControllerTwitchPlugin::ChatMode",
+            action_name="Chat Mode"
+        )
+        self.add_action_holder(self.chat_mode_action_holder)
         # Register plugin
         self.register(
             plugin_name="Twitch Integration",

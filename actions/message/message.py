@@ -1,3 +1,4 @@
+import os
 from gi.repository import Gtk, Adw
 from plugins.com_imdevinc_StreamControllerTwitchPlugin.TwitchActionBase import TwitchActionBase
 
@@ -11,6 +12,10 @@ class SendMessage(TwitchActionBase):
         super().__init__(*args, **kwargs)
         self.message_row = Adw.EntryRow(
             title=self.plugin_base.lm.get("actions.message.message"))
+
+    def on_ready(self):
+        self.set_media(media_path=os.path.join(
+            self.plugin_base.PATH, "assets", "chat.png"), size=0.85)
 
     def get_config_rows(self):
         super_rows = super().get_config_rows()
@@ -47,4 +52,7 @@ class SendMessage(TwitchActionBase):
         settings = self.get_settings()
         message = settings['message'] if 'message' in settings else None
         if message:
-            self.plugin_base.backend.send_message(message)
+            try:
+                self.plugin_base.backend.send_message(message)
+            except:
+                self.show_error()

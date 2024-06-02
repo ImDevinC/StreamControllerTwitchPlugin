@@ -62,6 +62,9 @@ class Backend(BackendBase):
         self.client_secret: str = ""
         self.auth_flow_started: bool = False
 
+        self.httpd: HTTPServer = None
+        self.httpd_thread: threading.Thread = None
+
     def set_error_callback(self, callback: callable):
         self.error_callback = callback
 
@@ -143,11 +146,11 @@ class Backend(BackendBase):
         encoded_params = urlencode(params)
         webbrowser.open(
             f"https://id.twitch.tv/oauth2/authorize?{encoded_params}")
-        httpd = HTTPServer(('localhost', 3000), make_handler(
+        self.httpd = HTTPServer(('localhost', 3000), make_handler(
             self, client_id, client_secret))
-        thread = threading.Thread(target=httpd.serve_forever)
-        thread.daemon = True
-        thread.start()
+        self.self.httpd_thread = threading.Thread(target=self.httpd.serve_forever)
+        self.httpd_thread.daemon = True
+        self.httpd_thread.start()
 
     def set_tokens(self, access_token: str, refresh_token: str) -> None:
         self.auth_flow_started = False
@@ -243,6 +246,11 @@ class Backend(BackendBase):
         if 'error' in resp:
             print(resp['error'])
             raise Exception(resp['error'])
+        
+    def on_disconnect(self, conn):
+        if self.httpd is not None:
+            self.httpd.shutdown()
+        super().on_disconnect(conn)
 
 
 backend = Backend()

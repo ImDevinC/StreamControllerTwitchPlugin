@@ -1,15 +1,17 @@
-from loguru import logger as log
-import asyncio
-from src.backend.PluginManager.ActionBase import ActionBase
+import os
 from gi.repository import Gtk, Adw
 import gi
+
+import globals as gl
+
+from src.backend.PluginManager.ActionBase import ActionBase
+
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
 
 
 class TwitchActionBase(ActionBase):
     def get_config_rows(self) -> list:
-        # validate_token = self.plugin_base.backend.validate_token()
         validate_token = False
         if not validate_token:
             label = "actions.base.status.no-credentials"
@@ -71,8 +73,10 @@ class TwitchActionBase(ActionBase):
             self._set_status(self.plugin_base.lm.get(
                 "actions.base.credentials.no-credentials"))
             return
+        settings_path = os.path.join(
+            gl.DATA_PATH, "settings", "plugins", self.plugin_base.get_plugin_id_from_folder_name(), "keys.json")
         self.plugin_base.backend.update_client_credentials(
-            client_id, client_secret)
+            client_id, client_secret, settings_path)
 
     def _set_status(self, message: str, is_error: bool = False):
         self.status_label.set_label(message)

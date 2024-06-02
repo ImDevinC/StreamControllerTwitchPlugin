@@ -36,3 +36,8 @@ class SendMessage(TwitchActionBase):
         settings = self.get_settings()
         settings['message'] = entry.get_text()
         self.set_settings(settings)
+
+    def on_key_down(self):
+        settings = self.get_settings()
+        message = settings.get('message', '')
+        self.plugin_base.backend.send_message(message)

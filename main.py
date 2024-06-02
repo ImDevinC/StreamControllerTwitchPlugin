@@ -21,6 +21,20 @@ class PluginTemplate(PluginBase):
         backend_path = os.path.join(self.PATH, "twitch_backend.py")
         self.launch_backend(backend_path=backend_path, open_in_terminal=True)
 
+        settings = self.get_settings()
+        access_token = settings.get('access_token', '')
+        refresh_token = settings.get('refresh_token', '')
+        access_code = settings.get('access_code', '')
+        self.wait_for_backend()
+
+        # if access_token and refresh_token:
+        #    self.backend.set_tokens(
+        #        access_token, refresh_token)
+        # client_id = settings['client_id'] if 'client_id' in settings else ''
+        # client_secret = settings['client_secret'] if 'client_secret' in settings else ''
+        # if client_id and client_secret:
+        #    self.backend.set_client_creds(client_id, client_secret)
+
         self.lm = self.locale_manager
         self.lm.set_to_os_default()
 
@@ -72,16 +86,3 @@ class PluginTemplate(PluginBase):
             plugin_version="1.0.0",
             app_version="1.1.1-alpha"
         )
-
-        # settings = self.get_settings()
-        # access_token = settings['access_token'] if 'access_token' in settings else ''
-        # refresh_token = settings['refresh_token'] if 'refresh_token' in settings else ''
-        # self.wait_for_backend()
-
-        # if access_token and refresh_token:
-        #    self.backend.set_tokens(
-        #        access_token, refresh_token)
-        # client_id = settings['client_id'] if 'client_id' in settings else ''
-        # client_secret = settings['client_secret'] if 'client_secret' in settings else ''
-        # if client_id and client_secret:
-        #    self.backend.set_client_creds(client_id, client_secret)

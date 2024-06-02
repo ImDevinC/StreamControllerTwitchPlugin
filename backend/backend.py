@@ -134,6 +134,9 @@ class Backend(BackendBase):
     def start_auth_flow(self, client_id: str, client_secret: str) -> None:
         if self.auth_flow_started:
             return
+        if None in (client_id, client_secret) or "" in (client_id, client_secret):
+            return
+
         self.auth_flow_started = True
         self.client_id = client_id
         self.client_secret = client_secret
@@ -181,6 +184,8 @@ class Backend(BackendBase):
             'sender_id': self.user_id,
             'message': message
         })
+        if resp is None:
+            return
         if 'error' in resp:
             raise Exception(resp['error'])
 
@@ -192,6 +197,8 @@ class Backend(BackendBase):
         }
         resp = self.do_twitch_api_get(
             f'https://api.twitch.tv/helix/streams?{urlencode(body)}')
+        if resp is None:
+            return
         if not 'data' in resp:
             return 0
         if len(resp['data']) == 0:
@@ -203,6 +210,8 @@ class Backend(BackendBase):
             'https://api.twitch.tv/helix/streams/marker', body={
                 'user_id': self.user_id
             })
+        if resp is None:
+            return
         if 'error' in resp:
             raise Exception(resp['error'])
 
@@ -213,6 +222,8 @@ class Backend(BackendBase):
         }
         resp = self.do_twitch_api_get(
             f'https://api.twitch.tv/helix/chat/settings?{urlencode(params)}')
+        if resp is None:
+            return
         if 'error' in resp:
             raise Exception(resp['error'])
         payload = resp['data'][0]
@@ -233,6 +244,8 @@ class Backend(BackendBase):
         resp = self.do_twitch_api_patch(f'https://api.twitch.tv/helix/chat/settings?{urlencode(params)}', body={
             mode: new
         })
+        if resp is None:
+            return
         if 'error' in resp:
             print(resp['error'])
             raise Exception(resp['error'])
@@ -243,6 +256,8 @@ class Backend(BackendBase):
         }
         resp = self.do_twitch_api_post(
             f'https://api.twitch.tv/helix/clips?{urlencode(params)}', body=None)
+        if resp is None:
+            return
         if 'error' in resp:
             print(resp['error'])
             raise Exception(resp['error'])

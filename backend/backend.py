@@ -62,6 +62,9 @@ class Backend(BackendBase):
         self.client_secret: str = ""
         self.auth_flow_started: bool = False
 
+        self.httpd: HTTPServer = None
+        self.httpd_thread: threading.Thread = None
+
     def set_error_callback(self, callback: callable):
         self.error_callback = callback
 
@@ -131,6 +134,9 @@ class Backend(BackendBase):
     def start_auth_flow(self, client_id: str, client_secret: str) -> None:
         if self.auth_flow_started:
             return
+        if None in (client_id, client_secret) or "" in (client_id, client_secret):
+            return
+
         self.auth_flow_started = True
         self.client_id = client_id
         self.client_secret = client_secret
@@ -143,11 +149,11 @@ class Backend(BackendBase):
         encoded_params = urlencode(params)
         webbrowser.open(
             f"https://id.twitch.tv/oauth2/authorize?{encoded_params}")
-        httpd = HTTPServer(('localhost', 3000), make_handler(
+        self.httpd = HTTPServer(('localhost', 3000), make_handler(
             self, client_id, client_secret))
-        thread = threading.Thread(target=httpd.serve_forever)
-        thread.daemon = True
-        thread.start()
+        self.self.httpd_thread = threading.Thread(target=self.httpd.serve_forever)
+        self.httpd_thread.daemon = True
+        self.httpd_thread.start()
 
     def set_tokens(self, access_token: str, refresh_token: str) -> None:
         self.auth_flow_started = False
@@ -178,6 +184,8 @@ class Backend(BackendBase):
             'sender_id': self.user_id,
             'message': message
         })
+        if resp is None:
+            return
         if 'error' in resp:
             raise Exception(resp['error'])
 
@@ -189,6 +197,8 @@ class Backend(BackendBase):
         }
         resp = self.do_twitch_api_get(
             f'https://api.twitch.tv/helix/streams?{urlencode(body)}')
+        if resp is None:
+            return
         if not 'data' in resp:
             return 0
         if len(resp['data']) == 0:
@@ -200,6 +210,8 @@ class Backend(BackendBase):
             'https://api.twitch.tv/helix/streams/marker', body={
                 'user_id': self.user_id
             })
+        if resp is None:
+            return
         if 'error' in resp:
             raise Exception(resp['error'])
 
@@ -210,6 +222,8 @@ class Backend(BackendBase):
         }
         resp = self.do_twitch_api_get(
             f'https://api.twitch.tv/helix/chat/settings?{urlencode(params)}')
+        if resp is None:
+            return
         if 'error' in resp:
             raise Exception(resp['error'])
         payload = resp['data'][0]
@@ -230,6 +244,8 @@ class Backend(BackendBase):
         resp = self.do_twitch_api_patch(f'https://api.twitch.tv/helix/chat/settings?{urlencode(params)}', body={
             mode: new
         })
+        if resp is None:
+            return
         if 'error' in resp:
             print(resp['error'])
             raise Exception(resp['error'])
@@ -240,9 +256,16 @@ class Backend(BackendBase):
         }
         resp = self.do_twitch_api_post(
             f'https://api.twitch.tv/helix/clips?{urlencode(params)}', body=None)
+        if resp is None:
+            return
         if 'error' in resp:
             print(resp['error'])
             raise Exception(resp['error'])
+        
+    def on_disconnect(self, conn):
+        if self.httpd is not None:
+            self.httpd.shutdown()
+        super().on_disconnect(conn)
 
 
 backend = Backend()

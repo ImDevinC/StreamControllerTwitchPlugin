@@ -19,5 +19,7 @@ class Viewers(TwitchActionBase):
     def show_current_viewers(self):
         while True:
             self.current_count = self.plugin_base.backend.get_viewers()
+            if self.current_count is None:
+                self.current_count = "-"
             self.set_center_label(str(self.current_count))
             time.sleep(30)

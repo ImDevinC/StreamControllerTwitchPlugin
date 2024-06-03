@@ -47,9 +47,12 @@ class Backend(BackendBase):
         super().__init__()
         self.twitch: Client = None
         self.user_id: str = None
-        self.settings_path: str = None
+        self.token_path: str = None
         self.httpd: HTTPServer = None
         self.httpd_thread: threading.Thread = None
+
+    def set_token_path(self, path: str) -> None:
+        self.token_path = path
 
     def on_disconnect(self, conn):
         if self.httpd is not None:
@@ -66,29 +69,43 @@ class Backend(BackendBase):
             return
         self.twitch.create_stream_marker(self.user_id)
 
-    def get_viewers(self) -> int:
+    def get_viewers(self) -> str:
         if not self.twitch:
             return
-        self.twitch.get_streams(
-            first=1, user_id=self.user_id, stream_type='live')
+        # TODO: https://github.com/DaCasBe/TwitchPy/issues/132
+        streams = self.twitch.get_streams(first=1, user_id=self.user_id)
+        if not streams:
+            return '-'
+        return str(streams[0].viewer_count)
 
-    def toggle_chat_mode(self, mode: str) -> None:
+    def toggle_chat_mode(self, mode: str) -> str:
         if not self.twitch:
             return
-        current = self.twitch.get_chat_settings(self.user_id)
-        updated = not current[mode]
+        current = self.twitch.get_chat_settings(self.user_id, self.user_id)
+        updated = not getattr(current, mode)
         self.twitch.update_chat_settings(
             self.user_id, self.user_id, **{mode: updated})
+        return str(updated)
+
+    def get_chat_settings(self) -> dict:
+        if not self.twitch:
+            return
+        current = self.twitch.get_chat_settings(self.user_id, self.user_id)
+        return {
+            'subscriber_mode': current.subscriber_mode,
+            'follower_mode': current.follower_mode,
+            'emote_mode': current.emote_mode,
+            'slow_mode': current.slow_mode
+        }
 
     def send_message(self, message: str) -> None:
         if not self.twitch:
             return
         self.twitch.send_chat_message(self.user_id, self.user_id, message)
 
-    def update_client_credentials(self, client_id: str, client_secret: str, settings_path: str) -> None:
+    def update_client_credentials(self, client_id: str, client_secret: str) -> None:
         if None in (client_id, client_secret) or "" in (client_id, client_secret):
             return
-        self.settings_path = settings_path
         params = {
             'client_id': client_id,
             'redirect_uri': 'http://localhost:3000/auth',
@@ -106,9 +123,11 @@ class Backend(BackendBase):
 
     def auth_with_code(self, client_id: str, client_secret: str, auth_code: str) -> None:
         self.twitch = Client(client_id=client_id, client_secret=client_secret,
-                             tokens_path=self.settings_path, redirect_uri='http://localhost:3000/auth', authorization_code=auth_code)
+                             tokens_path=self.token_path, redirect_uri='http://localhost:3000/auth', authorization_code=auth_code)
         users = self.twitch.get_users()
         self.user_id = users[0].user_id
+        self.frontend.save_auth_settings(
+            client_id, client_secret, auth_code)
 
 
 backend = Backend()

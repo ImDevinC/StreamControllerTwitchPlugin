@@ -1,5 +1,4 @@
 import os
-
 import globals as gl
 
 # Import StreamController modules
@@ -23,13 +22,13 @@ class PluginTemplate(PluginBase):
 
         # Launch backend
         backend_path = os.path.join(self.PATH, "twitch_backend.py")
-        self.launch_backend(backend_path=backend_path, open_in_terminal=True)
+        self.launch_backend(backend_path=backend_path, open_in_terminal=False)
+        self.wait_for_backend(tries=5)
 
         settings = self.get_settings()
         client_id = settings.get('client_id', '')
         client_secret = settings.get('client_secret', '')
         auth_code = settings.get('auth_code', '')
-        self.wait_for_backend()
 
         self.backend.set_token_path(os.path.join(
             gl.DATA_PATH, 'settings', 'plugins', self.get_plugin_id_from_folder_name(), 'keys.json'))

@@ -9,8 +9,8 @@ gi.require_version("Adw", "1")
 
 class TwitchActionBase(ActionBase):
     def get_config_rows(self) -> list:
-        validate_token = False
-        if not validate_token:
+        authed = self.plugin_base.backend.is_authed()
+        if not authed:
             label = "actions.base.status.no-credentials"
         else:
             label = "actions.base.credentials.authenticated"

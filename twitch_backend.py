@@ -113,11 +113,14 @@ class Backend(BackendBase):
             'scope': 'user:write:chat channel:manage:broadcast moderator:manage:chat_settings clips:edit'
         }
         encoded_params = urlencode(params)
-        self.httpd = HTTPServer(('localhost', 3000), make_handler(
-            self, client_id, client_secret))
-        self.httpd_thread = threading.Thread(
-            target=self.httpd.serve_forever, daemon=True)
+        if not self.httpd:
+            self.httpd = HTTPServer(('localhost', 3000), make_handler(
+                self, client_id, client_secret))
+        if not self.httpd_thread or not self.httpd_thread.is_alive():
+            self.httpd_thread = threading.Thread(
+                target=self.httpd.serve_forever, daemon=True)
         self.httpd_thread.start()
+
         webbrowser.open(
             f'https://id.twitch.tv/oauth2/authorize?{encoded_params}')
 
@@ -128,6 +131,9 @@ class Backend(BackendBase):
         self.user_id = users[0].user_id
         self.frontend.save_auth_settings(
             client_id, client_secret, auth_code)
+
+    def is_authed(self) -> bool:
+        return self.user_id != None
 
 
 backend = Backend()

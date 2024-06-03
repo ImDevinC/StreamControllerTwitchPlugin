@@ -1,27 +1,42 @@
 import os
 
+import globals as gl
+
 # Import StreamController modules
 from src.backend.PluginManager.PluginBase import PluginBase
 from src.backend.PluginManager.ActionHolder import ActionHolder
 
 # Import actions
-from .actions.message.message import SendMessage
-from .actions.viewers.viewers import Viewers
-from .actions.marker.marker import Marker
-from .actions.chat_mode.chat_mode import ChatMode
-from .actions.clip.clip import Clip
+from .actions.message import SendMessage
+from .actions.chat_mode import ChatMode
+from .actions.clip import Clip
+from .actions.marker import Marker
+from .actions.viewers import Viewers
 
 
 class PluginTemplate(PluginBase):
     def __init__(self):
         super().__init__()
 
-        # Launch backend
-        backend_path = os.path.join(self.PATH, "backend", "backend.py")
-        self.launch_backend(backend_path=backend_path, open_in_terminal=True)
-
         self.lm = self.locale_manager
         self.lm.set_to_os_default()
+
+        # Launch backend
+        backend_path = os.path.join(self.PATH, "twitch_backend.py")
+        self.launch_backend(backend_path=backend_path, open_in_terminal=True)
+
+        settings = self.get_settings()
+        client_id = settings.get('client_id', '')
+        client_secret = settings.get('client_secret', '')
+        auth_code = settings.get('auth_code', '')
+        self.wait_for_backend()
+
+        self.backend.set_token_path(os.path.join(
+            gl.DATA_PATH, 'settings', 'plugins', self.get_plugin_id_from_folder_name(), 'keys.json'))
+
+        if client_id and client_secret and auth_code:
+            self.backend.auth_with_code(
+                client_id, client_secret, auth_code)
 
         # Register actions
         self.message_action_holder = ActionHolder(
@@ -72,15 +87,9 @@ class PluginTemplate(PluginBase):
             app_version="1.1.1-alpha"
         )
 
+    def save_auth_settings(self, client_id: str, client_secret: str, auth_code: str) -> None:
         settings = self.get_settings()
-        access_token = settings['access_token'] if 'access_token' in settings else ''
-        refresh_token = settings['refresh_token'] if 'refresh_token' in settings else ''
-        self.wait_for_backend()
-
-        if access_token and refresh_token:
-            self.backend.set_tokens(
-                access_token, refresh_token)
-        client_id = settings['client_id'] if 'client_id' in settings else ''
-        client_secret = settings['client_secret'] if 'client_secret' in settings else ''
-        if client_id and client_secret:
-            self.backend.set_client_creds(client_id, client_secret)
+        settings['client_id'] = client_id
+        settings['client_secret'] = client_secret
+        settings['auth_code'] = auth_code
+        self.set_settings(settings)

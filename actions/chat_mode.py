@@ -1,17 +1,17 @@
 import time
 import threading
+import gi
 from gi.repository import Gtk, Adw
+
+from loguru import logger as log
+
 from plugins.com_imdevinc_StreamControllerTwitchPlugin.TwitchActionBase import TwitchActionBase
 
-import gi
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
 
 
 class ChatMode(TwitchActionBase):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
     def on_ready(self):
         threading.Thread(target=self.get_mode_status, daemon=True,
                          name="get_mode_status").start()
@@ -27,33 +27,33 @@ class ChatMode(TwitchActionBase):
         self.action_model.append('Emote Mode')
         self.action_model.append('Slow Mode')
 
-        self.mode_row.connect("notify::selected", self.on_change_mode)
-        self.load_configs()
+        self.mode_row.connect("notify::selected", self._on_change_mode)
+        self._load_config()
         super_rows.append(self.mode_row)
         return super_rows
 
     def on_key_down(self):
-        try:
-            settings = self.get_settings()
-            mode = settings['mode']
-            parsed_mode = mode.lower().replace(' ', '_')
-            self.plugin_base.backend.toggle_chat_mode(parsed_mode)
-        except:
-            self.show_error()
+        settings = self.get_settings()
+        mode = settings['mode']
+        parsed_mode = mode.lower().replace(' ', '_')
+        resp = self.plugin_base.backend.toggle_chat_mode(parsed_mode)
+        if resp:
+            self.set_bottom_label(resp)
 
-    def load_configs(self):
+    def _load_config(self):
         settings = self.get_settings()
         for i, name in enumerate(self.action_model):
             if name.get_string() == settings.get('mode'):
                 self.mode_row.set_selected(i)
-                self.on_change_mode()
                 return
 
         self.mode_row.set_selected(Gtk.INVALID_LIST_POSITION)
 
-    def on_change_mode(self, *_):
+    def _on_change_mode(self, *_):
         settings = self.get_settings()
         selected_index = self.mode_row.get_selected()
+        if not selected_index:
+            return
         settings['mode'] = self.action_model[selected_index].get_string()
         self.set_settings(settings)
         self.set_top_label(
@@ -68,7 +68,7 @@ class ChatMode(TwitchActionBase):
                 parsed_mode = mode.lower().replace(' ', '_')
                 self.set_bottom_label(str(existing_modes[parsed_mode]))
                 self.set_top_label(mode.split(' ')[0])
-            except Exception as ex:
-                print(ex)
-                self.show_error()
+            except:
+                self.set_bottom_label('-')
+                pass
             time.sleep(3)

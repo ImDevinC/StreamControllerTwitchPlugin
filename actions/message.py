@@ -1,6 +1,5 @@
 
 import os
-from loguru import logger as log
 import gi
 from gi.repository import Adw
 

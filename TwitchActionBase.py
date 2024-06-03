@@ -1,8 +1,5 @@
-import os
 from gi.repository import Gtk, Adw
 import gi
-
-import globals as gl
 
 from src.backend.PluginManager.ActionBase import ActionBase
 
@@ -73,10 +70,8 @@ class TwitchActionBase(ActionBase):
             self._set_status(self.plugin_base.lm.get(
                 "actions.base.credentials.no-credentials"))
             return
-        settings_path = os.path.join(
-            gl.DATA_PATH, "settings", "plugins", self.plugin_base.get_plugin_id_from_folder_name(), "keys.json")
         self.plugin_base.backend.update_client_credentials(
-            client_id, client_secret, settings_path)
+            client_id, client_secret)
 
     def _set_status(self, message: str, is_error: bool = False):
         self.status_label.set_label(message)
@@ -87,13 +82,9 @@ class TwitchActionBase(ActionBase):
             self.status_label.remove_css_class("red")
             self.status_label.add_css_class("green")
 
-    def auth_callback(self, access_token: str, refresh_token: str, message: str, error: bool):
-        self._set_status(message, error)
+    def on_auth_successful(self, client_id: str, client_secret: str, authorization_code: str) -> None:
         settings = self.plugin_base.get_settings()
-        if error:
-            settings['access_token'] = ''
-            settings['refresh_token'] = ''
-        else:
-            settings['access_token'] = access_token
-            settings['refresh_token'] = refresh_token
+        settings['client_id'] = client_id
+        settings['client_secret'] = client_secret
+        settings['authorization_code'] = authorization_code
         self.plugin_base.set_settings(settings)

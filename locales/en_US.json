@@ -6,5 +6,6 @@
   "actions.base.twitch_client_id": "Twitch Client ID",
   "actions.base.twitch_client_secret": "Twitch Client Secret",
   "actions.base.credentials.authenticated": "Authenticated successfully",
-  "actions.message.message": "Message"
+  "actions.message.message": "Message",
+  "actions.chat_mode.mode_row.label": "Chat Mode"
 }

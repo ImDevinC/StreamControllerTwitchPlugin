@@ -72,7 +72,6 @@ class Backend(BackendBase):
     def get_viewers(self) -> str:
         if not self.twitch:
             return
-        # TODO: https://github.com/DaCasBe/TwitchPy/issues/132
         streams = self.twitch.get_streams(first=1, user_id=self.user_id)
         if not streams:
             return '-'

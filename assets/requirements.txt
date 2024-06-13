@@ -1,1 +1,1 @@
-twitchpy==1.2.2
+twitchpy==1.2.3

@@ -12,11 +12,13 @@ class TwitchActionBase(ActionBase):
         authed = self.plugin_base.backend.is_authed()
         if not authed:
             label = "actions.base.status.no-credentials"
+            css_style = "twitch-controller-red"
         else:
             label = "actions.base.credentials.authenticated"
+            css_style = "twitch-controller-green"
 
         self.status_label = Gtk.Label(
-            label=self.plugin_base.lm.get(label), css_classes=["red"])
+            label=self.plugin_base.lm.get(label), css_classes=[css_style])
         self.client_id = Adw.EntryRow(
             title=self.plugin_base.lm.get("actions.base.twitch_client_id"))
         self.client_secret = Adw.PasswordEntryRow(
@@ -68,7 +70,7 @@ class TwitchActionBase(ActionBase):
         client_secret = settings.get('client_secret')
         if not client_id or not client_secret:
             self._set_status(self.plugin_base.lm.get(
-                "actions.base.credentials.no-credentials"))
+                "actions.base.credentials.no-credentials"), True)
             return
         self.plugin_base.backend.update_client_credentials(
             client_id, client_secret)
@@ -76,11 +78,11 @@ class TwitchActionBase(ActionBase):
     def _set_status(self, message: str, is_error: bool = False):
         self.status_label.set_label(message)
         if is_error:
-            self.status_label.remove_css_class("green")
-            self.status_label.add_css_class("red")
+            self.status_label.remove_css_class("twitch-controller-green")
+            self.status_label.add_css_class("twitch-controller-red")
         else:
-            self.status_label.remove_css_class("red")
-            self.status_label.add_css_class("green")
+            self.status_label.remove_css_class("twitch-controller-red")
+            self.status_label.add_css_class("twitch-controller-green")
 
     def on_auth_successful(self, client_id: str, client_secret: str, authorization_code: str) -> None:
         settings = self.plugin_base.get_settings()
@@ -88,3 +90,5 @@ class TwitchActionBase(ActionBase):
         settings['client_secret'] = client_secret
         settings['authorization_code'] = authorization_code
         self.plugin_base.set_settings(settings)
+        self._set_status(self.plugin_base.lm.get(
+            "actions.base.credentials.authenticated"), False)

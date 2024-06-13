@@ -85,6 +85,7 @@ class PluginTemplate(PluginBase):
             plugin_version="1.0.0",
             app_version="1.1.1-alpha"
         )
+        self.add_css_stylesheet(os.path.join(self.PATH, "style.css"))
 
     def save_auth_settings(self, client_id: str, client_secret: str, auth_code: str) -> None:
         settings = self.get_settings()

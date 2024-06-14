@@ -9,8 +9,8 @@
     "streaming",
     "twitch"
   ],
-  "minimum-app-version": "1.5.0",
-  "app-version": "1.5.0",
+  "minimum-app-version": "1.5.0-beta.4",
+  "app-version": "1.5.0-beta.4",
   "description": "Adds different controls for interacting with your Twitch stream",
   "short-description": "Control Twitch"
 }

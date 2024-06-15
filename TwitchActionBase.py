@@ -44,6 +44,12 @@ class TwitchActionBase(ActionBase):
         self.load_config()
         return [group]
 
+    def get_custom_config_area(self):
+        label = Gtk.Label(
+            use_markup=True,
+            label=f"{self.plugin_base.lm.get('actions.info.link.label')} <a href=\"https://github.com/ImDevinC/StreamControllerTwitchPlugin\">{self.plugin_base.lm.get('actions.info.link.text')}</a>")
+        return label
+
     def load_config(self):
         settings = self.plugin_base.get_settings()
         client_id = settings.setdefault("client_id", "")

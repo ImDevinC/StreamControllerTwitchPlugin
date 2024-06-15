@@ -34,7 +34,7 @@ def make_handler(plugin_backend: 'Backend', client_id: str, client_secret: str):
             self.wfile.write(bytes(message, 'utf8'))
 
             if status != 200:
-                # TODO: Handle error
+                plugin_backend.auth_failed()
                 return
 
             plugin_backend.auth_with_code(
@@ -50,6 +50,7 @@ class Backend(BackendBase):
         self.token_path: str = None
         self.httpd: HTTPServer = None
         self.httpd_thread: threading.Thread = None
+        self.auth_callback_fn: callable = None
 
     def set_token_path(self, path: str) -> None:
         self.token_path = path
@@ -102,9 +103,10 @@ class Backend(BackendBase):
             return
         self.twitch.send_chat_message(self.user_id, self.user_id, message)
 
-    def update_client_credentials(self, client_id: str, client_secret: str) -> None:
+    def update_client_credentials(self, client_id: str, client_secret: str, callbackfn: callable) -> None:
         if None in (client_id, client_secret) or "" in (client_id, client_secret):
             return
+        self.auth_callback_fn = callbackfn
         params = {
             'client_id': client_id,
             'redirect_uri': 'http://localhost:3000/auth',
@@ -131,9 +133,15 @@ class Backend(BackendBase):
             self.user_id = users[0].user_id
             self.frontend.save_auth_settings(
                 client_id, client_secret, auth_code)
+            if self.auth_callback_fn:
+                print('auth callback')
+                self.auth_callback_fn(True)
         except:
-            # TODO: Handle error here
-            pass
+            self.auth_failed()
+
+    def auth_failed(self) -> None:
+        if self.auth_callback_fn:
+            self.auth_callback_fn(False)
 
     def is_authed(self) -> bool:
         return self.user_id != None

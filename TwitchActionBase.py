@@ -11,7 +11,7 @@ class TwitchActionBase(ActionBase):
     def get_config_rows(self) -> list:
         authed = self.plugin_base.backend.is_authed()
         if not authed:
-            label = "actions.base.status.no-credentials"
+            label = "actions.base.credentials.no-credentials"
             css_style = "twitch-controller-red"
         else:
             label = "actions.base.credentials.authenticated"
@@ -79,9 +79,10 @@ class TwitchActionBase(ActionBase):
                 "actions.base.credentials.no-credentials"), True)
             return
         self.plugin_base.backend.update_client_credentials(
-            client_id, client_secret)
+            client_id, client_secret, self.on_auth_completed)
 
     def _set_status(self, message: str, is_error: bool = False):
+        print(f'updating message: {message}')
         self.status_label.set_label(message)
         if is_error:
             self.status_label.remove_css_class("twitch-controller-green")
@@ -90,11 +91,11 @@ class TwitchActionBase(ActionBase):
             self.status_label.remove_css_class("twitch-controller-red")
             self.status_label.add_css_class("twitch-controller-green")
 
-    def on_auth_successful(self, client_id: str, client_secret: str, authorization_code: str) -> None:
-        settings = self.plugin_base.get_settings()
-        settings['client_id'] = client_id
-        settings['client_secret'] = client_secret
-        settings['authorization_code'] = authorization_code
-        self.plugin_base.set_settings(settings)
-        self._set_status(self.plugin_base.lm.get(
-            "actions.base.credentials.authenticated"), False)
+    def on_auth_completed(self, success: bool) -> None:
+        print(f'on_auth_completed: {success}')
+        if success:
+            self._set_status(self.plugin_base.lm.get(
+                "actions.base.credentials.authenticated"), False)
+        else:
+            self._set_status(self.plugin_base.lm.get(
+                "actions.base.credentials.failed"), True)

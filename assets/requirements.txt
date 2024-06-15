@@ -1,1 +1,4 @@
 twitchpy==1.2.3
+loguru==0.7.2
+rpyc==6.0.0
+streamcontroller-plugin-tools>=2.0.0

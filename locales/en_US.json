@@ -1,6 +1,6 @@
 {
   "plugin.name": "Twitch",
-  "actions.base.status.no-credentials": "Missing credentials",
+  "actions.base.credentials.no-credentials": "Missing credentials",
   "actions.base.credentials.title": "Twitch Credentials",
   "actions.base.credentials.validate": "Validate",
   "actions.base.twitch_client_id": "Twitch Client ID",

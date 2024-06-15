@@ -22,7 +22,7 @@ class PluginTemplate(PluginBase):
 
         # Launch backend
         backend_path = os.path.join(self.PATH, "twitch_backend.py")
-        self.launch_backend(backend_path=backend_path, open_in_terminal=False)
+        self.launch_backend(backend_path=backend_path, open_in_terminal=False, venv_path=os.path.join(self.PATH, ".venv"))
         self.wait_for_backend(tries=5)
 
         settings = self.get_settings()

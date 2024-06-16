@@ -120,7 +120,8 @@ class Backend(BackendBase):
         if not self.httpd_thread or not self.httpd_thread.is_alive():
             self.httpd_thread = threading.Thread(
                 target=self.httpd.serve_forever, daemon=True)
-        self.httpd_thread.start()
+        if not self.httpd_thread.is_alive():
+            self.httpd_thread.start()
 
         webbrowser.open(
             f'https://id.twitch.tv/oauth2/authorize?{encoded_params}')

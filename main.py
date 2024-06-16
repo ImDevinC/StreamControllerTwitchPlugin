@@ -20,9 +20,12 @@ class PluginTemplate(PluginBase):
         self.lm = self.locale_manager
         self.lm.set_to_os_default()
 
+        self.auth_callback_fn: callable = None
+
         # Launch backend
         backend_path = os.path.join(self.PATH, "twitch_backend.py")
-        self.launch_backend(backend_path=backend_path, open_in_terminal=False, venv_path=os.path.join(self.PATH, ".venv"))
+        self.launch_backend(backend_path=backend_path, open_in_terminal=False,
+                            venv_path=os.path.join(self.PATH, ".venv"))
         self.wait_for_backend(tries=5)
 
         settings = self.get_settings()
@@ -93,3 +96,7 @@ class PluginTemplate(PluginBase):
         settings['client_secret'] = client_secret
         settings['auth_code'] = auth_code
         self.set_settings(settings)
+
+    def on_auth_callback(self, success: bool) -> None:
+        if self.auth_callback_fn:
+            self.auth_callback_fn(success)

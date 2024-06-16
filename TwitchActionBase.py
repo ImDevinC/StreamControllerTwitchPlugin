@@ -78,11 +78,12 @@ class TwitchActionBase(ActionBase):
             self._set_status(self.plugin_base.lm.get(
                 "actions.base.credentials.no-credentials"), True)
             return
+        self.auth_button.set_sensitive(False)
+        self.plugin_base.auth_callback_fn = self.on_auth_completed
         self.plugin_base.backend.update_client_credentials(
-            client_id, client_secret, self.on_auth_completed)
+            client_id, client_secret)
 
     def _set_status(self, message: str, is_error: bool = False):
-        print(f'updating message: {message}')
         self.status_label.set_label(message)
         if is_error:
             self.status_label.remove_css_class("twitch-controller-green")
@@ -92,7 +93,7 @@ class TwitchActionBase(ActionBase):
             self.status_label.add_css_class("twitch-controller-green")
 
     def on_auth_completed(self, success: bool) -> None:
-        print(f'on_auth_completed: {success}')
+        self.auth_button.set_sensitive(True)
         if success:
             self._set_status(self.plugin_base.lm.get(
                 "actions.base.credentials.authenticated"), False)

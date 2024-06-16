@@ -5,11 +5,12 @@ import webbrowser
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs, urlencode
 import threading
+import requests
 
 from streamcontroller_plugin_tools import BackendBase
 
 
-def make_handler(plugin_backend: 'Backend', client_id: str, client_secret: str):
+def make_handler(plugin_backend: 'Backend'):
     class AuthHandler(BaseHTTPRequestHandler):
         def do_GET(self):
             if not self.path.startswith('/auth'):
@@ -34,11 +35,11 @@ def make_handler(plugin_backend: 'Backend', client_id: str, client_secret: str):
             self.wfile.write(bytes(message, 'utf8'))
 
             if status != 200:
-                # TODO: Handle error
+                plugin_backend.auth_failed()
                 return
 
-            plugin_backend.auth_with_code(
-                client_id, client_secret, query_params['code'][0])
+            plugin_backend.new_code(query_params['code'][0])
+
     return AuthHandler
 
 
@@ -48,6 +49,8 @@ class Backend(BackendBase):
         self.twitch: Client = None
         self.user_id: str = None
         self.token_path: str = None
+        self.client_secret: str = None
+        self.client_id: str = None
         self.httpd: HTTPServer = None
         self.httpd_thread: threading.Thread = None
 
@@ -88,7 +91,7 @@ class Backend(BackendBase):
 
     def get_chat_settings(self) -> dict:
         if not self.twitch:
-            return
+            return {}
         current = self.twitch.get_chat_settings(self.user_id, self.user_id)
         return {
             'subscriber_mode': current.subscriber_mode,
@@ -105,6 +108,8 @@ class Backend(BackendBase):
     def update_client_credentials(self, client_id: str, client_secret: str) -> None:
         if None in (client_id, client_secret) or "" in (client_id, client_secret):
             return
+        self.client_id = client_id
+        self.client_secret = client_secret
         params = {
             'client_id': client_id,
             'redirect_uri': 'http://localhost:3000/auth',
@@ -113,15 +118,25 @@ class Backend(BackendBase):
         }
         encoded_params = urlencode(params)
         if not self.httpd:
-            self.httpd = HTTPServer(('localhost', 3000), make_handler(
-                self, client_id, client_secret))
+            self.httpd = HTTPServer(('localhost', 3000), make_handler(self))
         if not self.httpd_thread or not self.httpd_thread.is_alive():
             self.httpd_thread = threading.Thread(
                 target=self.httpd.serve_forever, daemon=True)
-        self.httpd_thread.start()
+        if not self.httpd_thread.is_alive():
+            self.httpd_thread.start()
+
+        url = f'https://id.twitch.tv/oauth2/authorize?{encoded_params}'
+        check = requests.get(url, timeout=5)
+        if check.status_code != 200:
+            print('invalid client ID')
+            self.auth_failed()
+            return
 
         webbrowser.open(
             f'https://id.twitch.tv/oauth2/authorize?{encoded_params}')
+
+    def new_code(self, auth_code: str) -> None:
+        self.auth_with_code(self.client_id, self.client_secret, auth_code)
 
     def auth_with_code(self, client_id: str, client_secret: str, auth_code: str) -> None:
         try:
@@ -131,9 +146,14 @@ class Backend(BackendBase):
             self.user_id = users[0].user_id
             self.frontend.save_auth_settings(
                 client_id, client_secret, auth_code)
-        except:
-            # TODO: Handle error here
-            pass
+            self.frontend.on_auth_callback(True)
+        except Exception as e:
+            print(e)
+            self.auth_failed()
+
+    def auth_failed(self) -> None:
+        self.user_id = None
+        self.frontend.on_auth_callback(False)
 
     def is_authed(self) -> bool:
         return self.user_id != None

@@ -6,6 +6,7 @@
   "actions.base.twitch_client_id": "Twitch Client ID",
   "actions.base.twitch_client_secret": "Twitch Client Secret",
   "actions.base.credentials.authenticated": "Authenticated successfully",
+  "actions.base.credentials.failed": "Authentication failed",
   "actions.message.message": "Message",
   "actions.chat_mode.mode_row.label": "Chat Mode",
   "actions.info.link.label": "Checkout how to configure this plugin on",

@@ -124,12 +124,16 @@ class Backend(BackendBase):
             f'https://id.twitch.tv/oauth2/authorize?{encoded_params}')
 
     def auth_with_code(self, client_id: str, client_secret: str, auth_code: str) -> None:
-        self.twitch = Client(client_id=client_id, client_secret=client_secret,
-                             tokens_path=self.token_path, redirect_uri='http://localhost:3000/auth', authorization_code=auth_code)
-        users = self.twitch.get_users()
-        self.user_id = users[0].user_id
-        self.frontend.save_auth_settings(
-            client_id, client_secret, auth_code)
+        try:
+            self.twitch = Client(client_id=client_id, client_secret=client_secret,
+                                 tokens_path=self.token_path, redirect_uri='http://localhost:3000/auth', authorization_code=auth_code)
+            users = self.twitch.get_users()
+            self.user_id = users[0].user_id
+            self.frontend.save_auth_settings(
+                client_id, client_secret, auth_code)
+        except:
+            # TODO: Handle error here
+            pass
 
     def is_authed(self) -> bool:
         return self.user_id != None

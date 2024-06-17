@@ -33,9 +33,10 @@ class PluginTemplate(PluginBase):
         client_secret = settings.get('client_secret', '')
         auth_code = settings.get('auth_code', '')
 
-        self.backend.set_token_path(os.path.join(
-            gl.DATA_PATH, 'settings', 'plugins', self.get_plugin_id_from_folder_name(), 'keys.json'))
-
+        settings_path = os.path.join(
+            gl.DATA_PATH, 'settings', 'plugins', self.get_plugin_id_from_folder_name())
+        os.makedirs(settings_path, exist_ok=True)
+        self.backend.set_token_path(os.path.join(settings_path, "keys.json"))
         if client_id and client_secret and auth_code:
             self.backend.auth_with_code(
                 client_id, client_secret, auth_code)

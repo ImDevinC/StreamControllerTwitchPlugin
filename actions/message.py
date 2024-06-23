@@ -3,6 +3,8 @@ import os
 import gi
 from gi.repository import Adw
 
+from loguru import logger as log
+
 from plugins.com_imdevinc_StreamControllerTwitchPlugin.TwitchActionBase import TwitchActionBase
 
 gi.require_version("Gtk", "4.0")
@@ -39,4 +41,8 @@ class SendMessage(TwitchActionBase):
     def on_key_down(self):
         settings = self.get_settings()
         message = settings.get('message', '')
-        self.plugin_base.backend.send_message(message)
+        try:
+            self.plugin_base.backend.send_message(message)
+        except Exception as ex:
+            log.error(ex)
+            self.show_error(3)

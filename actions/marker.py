@@ -1,5 +1,7 @@
 import os
 
+from loguru import logger as log
+
 from plugins.com_imdevinc_StreamControllerTwitchPlugin.TwitchActionBase import TwitchActionBase
 
 
@@ -9,4 +11,8 @@ class Marker(TwitchActionBase):
             self.plugin_base.PATH, "assets", "bookmark.png"), size=0.85)
 
     def on_key_down(self):
-        self.plugin_base.backend.create_marker()
+        try:
+            self.plugin_base.backend.create_marker()
+        except Exception as ex:
+            log.error(ex)
+            self.show_error(3)

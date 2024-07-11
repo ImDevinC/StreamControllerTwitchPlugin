@@ -1,11 +1,12 @@
-import os
-
-from twitchpy.client import Client
 import webbrowser
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs, urlencode
 import threading
 import requests
+
+from loguru import logger as log
+from twitchpy.client import Client
+from twitchpy.errors import ClientError
 
 from streamcontroller_plugin_tools import BackendBase
 
@@ -53,6 +54,7 @@ class Backend(BackendBase):
         self.client_id: str = None
         self.httpd: HTTPServer = None
         self.httpd_thread: threading.Thread = None
+        self.auth_code: str = None
 
     def set_token_path(self, path: str) -> None:
         self.token_path = path
@@ -65,16 +67,19 @@ class Backend(BackendBase):
     def create_clip(self) -> None:
         if not self.twitch:
             return
+        self.validate_auth()
         self.twitch.create_clip(self.user_id)
 
     def create_marker(self) -> None:
         if not self.twitch:
             return
+        self.validate_auth()
         self.twitch.create_stream_marker(self.user_id)
 
     def get_viewers(self) -> str:
         if not self.twitch:
             return
+        self.validate_auth()
         streams = self.twitch.get_streams(first=1, user_id=self.user_id)
         if not streams:
             return '-'
@@ -83,6 +88,7 @@ class Backend(BackendBase):
     def toggle_chat_mode(self, mode: str) -> str:
         if not self.twitch:
             return
+        self.validate_auth()
         current = self.twitch.get_chat_settings(self.user_id, self.user_id)
         updated = not getattr(current, mode)
         self.twitch.update_chat_settings(
@@ -92,6 +98,7 @@ class Backend(BackendBase):
     def get_chat_settings(self) -> dict:
         if not self.twitch:
             return {}
+        self.validate_auth()
         current = self.twitch.get_chat_settings(self.user_id, self.user_id)
         return {
             'subscriber_mode': current.subscriber_mode,
@@ -103,6 +110,7 @@ class Backend(BackendBase):
     def send_message(self, message: str) -> None:
         if not self.twitch:
             return
+        self.validate_auth()
         self.twitch.send_chat_message(self.user_id, self.user_id, message)
 
     def update_client_credentials(self, client_id: str, client_secret: str) -> None:
@@ -114,7 +122,7 @@ class Backend(BackendBase):
             'client_id': client_id,
             'redirect_uri': 'http://localhost:3000/auth',
             'response_type': 'code',
-            'scope': 'user:write:chat channel:manage:broadcast moderator:manage:chat_settings clips:edit'
+            'scope': 'user:write:chat channel:manage:broadcast moderator:manage:chat_settings clips:edit channel:read:subscriptions'
         }
         encoded_params = urlencode(params)
         if not self.httpd:
@@ -138,17 +146,27 @@ class Backend(BackendBase):
     def new_code(self, auth_code: str) -> None:
         self.auth_with_code(self.client_id, self.client_secret, auth_code)
 
+    def validate_auth(self) -> None:
+        try:
+            _ = self.twitch.get_streams(first=1, user_id=self.user_id)
+        except ClientError:
+            self.auth_with_code(
+                self.client_id, self.client_secret, self.auth_code)
+
     def auth_with_code(self, client_id: str, client_secret: str, auth_code: str) -> None:
         try:
             self.twitch = Client(client_id=client_id, client_secret=client_secret,
                                  tokens_path=self.token_path, redirect_uri='http://localhost:3000/auth', authorization_code=auth_code)
             users = self.twitch.get_users()
+            self.auth_code = auth_code
             self.user_id = users[0].user_id
+            self.client_id = client_id
+            self.client_secret = client_secret
             self.frontend.save_auth_settings(
                 client_id, client_secret, auth_code)
             self.frontend.on_auth_callback(True)
         except Exception as e:
-            print(e)
+            log.error("failed to authenticate", e)
             self.auth_failed()
 
     def auth_failed(self) -> None:

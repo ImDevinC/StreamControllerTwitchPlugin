@@ -8,16 +8,21 @@ from plugins.com_imdevinc_StreamControllerTwitchPlugin.TwitchActionBase import T
 
 
 class Viewers(TwitchActionBase):
+    __viewer_thread: threading.Thread = None
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.current_count = 0
         self._view_hidden = False
+        self.__viewer_thread = None
 
     def on_ready(self):
         self.set_media(media_path=os.path.join(
             self.plugin_base.PATH, "assets", "view.png"), size=0.85)
-        threading.Thread(target=self.show_current_viewers,
-                         daemon=True, name="viewers_thread").start()
+        if not self.__viewer_thread or not self.__viewer_thread.is_alive():
+            self.__viewer_thread = threading.Thread(target=self.viewers_thread,
+                                                    daemon=True, name="viewers_thread")
+            self.__viewer_thread.start()
 
     def on_key_down(self):
         self._view_hidden = not self._view_hidden
@@ -29,7 +34,7 @@ class Viewers(TwitchActionBase):
     def viewers_thread(self):
         while True:
             self.show_current_viewers()
-            time.sleep(30)
+            time.sleep(10)
 
     def show_current_viewers(self):
         if self._view_hidden:

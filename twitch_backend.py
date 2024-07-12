@@ -82,7 +82,7 @@ class Backend(BackendBase):
         self.validate_auth()
         streams = self.twitch.get_streams(first=1, user_id=self.user_id)
         if not streams:
-            return '-'
+            return 'Not Live'
         return str(streams[0].viewer_count)
 
     def toggle_chat_mode(self, mode: str) -> str:

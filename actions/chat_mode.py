@@ -27,9 +27,8 @@ class ChatMode(TwitchActionBase):
 
     def on_ready(self):
         self._load_config()
-        if self._mode is not None:
-            self.set_media(media_path=os.path.join(
-                self.plugin_base.PATH, "assets", icons[self._mode]), size=0.85)
+        self.set_media(media_path=os.path.join(
+            self.plugin_base.PATH, "assets", icons[self._mode]), size=0.85)
         threading.Thread(target=self.get_mode_status, daemon=True,
                          name="get_mode_status").start()
 
@@ -74,6 +73,7 @@ class ChatMode(TwitchActionBase):
             if key == mode:
                 self._mode = key
                 return
+        self._mode = 'Follower Mode'
 
     def _on_change_mode(self, *_):
         settings = self.get_settings()

@@ -55,6 +55,7 @@ class Backend(BackendBase):
         self.httpd: HTTPServer = None
         self.httpd_thread: threading.Thread = None
         self.auth_code: str = None
+        self.cached_channels: dict = {}
 
     def set_token_path(self, path: str) -> None:
         self.token_path = path
@@ -63,6 +64,18 @@ class Backend(BackendBase):
         if self.httpd is not None:
             self.httpd.shutdown()
         super().on_disconnect(conn)
+
+    def get_channel_id(self, user_name: str) -> str | None:
+        if user_name in self.cached_channels:
+            return self.cached_channels[user_name]
+
+        users = self.twitch.get_users(None, [user_name])
+        if users:
+            channel_id = users[0].user_id
+            self.cached_channels[user_name] = channel_id
+            return str(channel_id)
+
+        return None
 
     def create_clip(self) -> None:
         if not self.twitch:
@@ -107,11 +120,12 @@ class Backend(BackendBase):
             'slow_mode': current.slow_mode
         }
 
-    def send_message(self, message: str) -> None:
+    def send_message(self, message: str, user_name: str) -> None:
         if not self.twitch:
             return
         self.validate_auth()
-        self.twitch.send_chat_message(self.user_id, self.user_id, message)
+        channel_id = self.get_channel_id(user_name) or self.user_id
+        self.twitch.send_chat_message(channel_id, self.user_id, message)
 
     def update_client_credentials(self, client_id: str, client_secret: str) -> None:
         if None in (client_id, client_secret) or "" in (client_id, client_secret):

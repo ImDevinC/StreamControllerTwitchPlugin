@@ -66,6 +66,8 @@ class Backend(BackendBase):
         super().on_disconnect(conn)
 
     def get_channel_id(self, user_name: str) -> str | None:
+        if not user_name:
+            return
         if user_name in self.cached_channels:
             return self.cached_channels[user_name]
 

@@ -11,6 +11,9 @@ from .actions.chat_mode import ChatMode
 from .actions.clip import Clip
 from .actions.marker import Marker
 from .actions.viewers import Viewers
+from .actions.play_ad import PlayAd
+from .actions.snooze_ad import SnoozeAd
+from .actions.ad_schedule import NextAd
 
 
 class PluginTemplate(PluginBase):
@@ -81,6 +84,30 @@ class PluginTemplate(PluginBase):
             action_name="Create Clip"
         )
         self.add_action_holder(self.clip_action_holder)
+
+        self.snooze_ad_action_holder = ActionHolder(
+            plugin_base=self,
+            action_base=SnoozeAd,
+            action_id="com_imdevinc_StreamControllerTwitchPlugin::SnoozeAd",
+            action_name="Snooze Ad"
+        )
+        self.add_action_holder(self.snooze_ad_action_holder)
+
+        self.play_ad_action_holder = ActionHolder(
+            plugin_base=self,
+            action_base=PlayAd,
+            action_id="com_imdevinc_StreamControllerTwitchPlugin::PlayAd",
+            action_name="Play Ad"
+        )
+        self.add_action_holder(self.play_ad_action_holder)
+
+        # self.next_ad_action_holder = ActionHolder(
+        #    plugin_base=self,
+        #    action_base=NextAd,
+        #    action_id="com_imdevinc_StreamControllerTwitchPlugin::NextAd",
+        #    action_name="Next Ad"
+        # )
+        # self.add_action_holder(self.next_ad_action_holder)
 
         # Register plugin
         self.register(

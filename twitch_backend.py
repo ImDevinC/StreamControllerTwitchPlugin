@@ -3,6 +3,7 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs, urlencode
 import threading
 import requests
+from datetime import datetime
 
 from loguru import logger as log
 from twitchpy.client import Client
@@ -129,6 +130,25 @@ class Backend(BackendBase):
         channel_id = self.get_channel_id(user_name) or self.user_id
         self.twitch.send_chat_message(channel_id, self.user_id, message)
 
+    def snooze_ad(self) -> None:
+        if not self.twitch:
+            return
+        self.validate_auth()
+        self.twitch.snooze_next_ad(self.user_id)
+
+    def play_ad(self, length: int) -> None:
+        if not self.twitch:
+            return
+        self.validate_auth()
+        self.twitch.start_commercial(self.user_id, length)
+
+    def get_next_ad(self) -> datetime:
+        if not self.twitch:
+            return "Not Live"
+        self.validate_auth()
+        schedule = self.twitch.get_ad_schedule(self.user_id)
+        return schedule.next_ad_at
+
     def update_client_credentials(self, client_id: str, client_secret: str) -> None:
         if None in (client_id, client_secret) or "" in (client_id, client_secret):
             return
@@ -138,7 +158,7 @@ class Backend(BackendBase):
             'client_id': client_id,
             'redirect_uri': 'http://localhost:3000/auth',
             'response_type': 'code',
-            'scope': 'user:write:chat channel:manage:broadcast moderator:manage:chat_settings clips:edit channel:read:subscriptions'
+            'scope': 'user:write:chat channel:manage:broadcast moderator:manage:chat_settings clips:edit channel:read:subscriptions channel:edit:commercial channel:manage:ads channel:read:ads'
         }
         encoded_params = urlencode(params)
         if not self.httpd:

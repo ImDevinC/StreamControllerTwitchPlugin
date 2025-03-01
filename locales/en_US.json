@@ -11,5 +11,6 @@
   "actions.message.channel": "Channel",
   "actions.chat_mode.mode_row.label": "Chat Mode",
   "actions.info.link.label": "Checkout how to configure this plugin on",
-  "actions.info.link.text": "GitHub"
+  "actions.info.link.text": "GitHub",
+  "actions.play_ad.time.label": "Ad Length"
 }

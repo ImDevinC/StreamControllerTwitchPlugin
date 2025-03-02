@@ -172,8 +172,8 @@ class Backend(BackendBase):
         url = f'https://id.twitch.tv/oauth2/authorize?{encoded_params}'
         check = requests.get(url, timeout=5)
         if check.status_code != 200:
-            print('invalid client ID')
-            self.auth_failed()
+            message = check.json().get("message") if check.json() else "Incorrect Client ID"
+            self.auth_failed(message)
             return
 
         webbrowser.open(
@@ -185,7 +185,7 @@ class Backend(BackendBase):
     def validate_auth(self) -> None:
         try:
             _ = self.twitch.get_streams(first=1, user_id=self.user_id)
-        except ClientError:
+        except Exception as ex:
             self.auth_with_code(
                 self.client_id, self.client_secret, self.auth_code)
 
@@ -205,9 +205,9 @@ class Backend(BackendBase):
             log.error("failed to authenticate", e)
             self.auth_failed()
 
-    def auth_failed(self) -> None:
+    def auth_failed(self, message: str = "") -> None:
         self.user_id = None
-        self.frontend.on_auth_callback(False)
+        self.frontend.on_auth_callback(False, message)
 
     def is_authed(self) -> bool:
         return self.user_id != None

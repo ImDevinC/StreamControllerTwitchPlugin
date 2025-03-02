@@ -4,7 +4,7 @@ from gi.repository import Adw, Gtk
 
 from loguru import logger as log
 
-from plugins.com_imdevinc_StreamControllerTwitchPlugin.TwitchActionBase import TwitchActionBase
+from src.backend.PluginManager.ActionBase import ActionBase
 
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
@@ -12,8 +12,12 @@ gi.require_version("Adw", "1")
 options = [30, 60, 90, 120]
 
 
-class PlayAd(TwitchActionBase):
+class PlayAd(ActionBase):
     _time: int = 30
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.has_configuration = True
 
     def on_ready(self):
         self.set_media(media_path=os.path.join(

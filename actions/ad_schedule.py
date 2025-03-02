@@ -2,17 +2,18 @@ import threading
 import time
 import os
 
-from loguru import logger as log
+from src.backend.PluginManager.ActionBase import ActionBase
 
-from plugins.com_imdevinc_StreamControllerTwitchPlugin.TwitchActionBase import TwitchActionBase
+from loguru import logger as log
 
 # Currently an issue with TwitchPy that gets the wrong time format, can't use this yet
 
 
-class NextAd(TwitchActionBase):
+class NextAd(ActionBase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.__ad_thread: threading.Thread = None
+        self.has_configuration = True
 
     def on_ready(self):
         self.set_media(media_path=os.path.join(
@@ -24,6 +25,8 @@ class NextAd(TwitchActionBase):
 
     def ad_thread(self):
         while True:
+            if not self.get_is_present():
+                return
             self.get_next_ad()
             time.sleep(1)
 

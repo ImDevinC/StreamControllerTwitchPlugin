@@ -5,13 +5,16 @@ from gi.repository import Adw
 
 from loguru import logger as log
 
-from plugins.com_imdevinc_StreamControllerTwitchPlugin.TwitchActionBase import TwitchActionBase
+from src.backend.PluginManager.ActionBase import ActionBase
 
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
 
 
-class SendMessage(TwitchActionBase):
+class SendMessage(ActionBase):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.has_configuration = True
 
     def on_ready(self):
         self.set_media(media_path=os.path.join(

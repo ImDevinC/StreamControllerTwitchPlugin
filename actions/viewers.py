@@ -4,10 +4,10 @@ import os
 
 from loguru import logger as log
 
-from plugins.com_imdevinc_StreamControllerTwitchPlugin.TwitchActionBase import TwitchActionBase
+from src.backend.PluginManager.ActionBase import ActionBase
 
 
-class Viewers(TwitchActionBase):
+class Viewers(ActionBase):
     __viewer_thread: threading.Thread = None
 
     def __init__(self, *args, **kwargs):
@@ -33,6 +33,8 @@ class Viewers(TwitchActionBase):
 
     def viewers_thread(self):
         while True:
+            if not self.get_is_present():
+                return
             self.show_current_viewers()
             time.sleep(10)
 

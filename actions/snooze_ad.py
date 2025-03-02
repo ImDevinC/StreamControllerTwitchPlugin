@@ -3,10 +3,10 @@ import os
 
 from loguru import logger as log
 
-from plugins.com_imdevinc_StreamControllerTwitchPlugin.TwitchActionBase import TwitchActionBase
+from src.backend.PluginManager.ActionBase import ActionBase
 
 
-class SnoozeAd(TwitchActionBase):
+class SnoozeAd(ActionBase):
     def on_ready(self):
         self.set_media(media_path=os.path.join(
             self.plugin_base.PATH, "assets", "delay.png"), size=0.85)

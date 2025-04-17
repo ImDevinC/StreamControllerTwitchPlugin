@@ -7,7 +7,6 @@ from datetime import datetime
 
 from loguru import logger as log
 from twitchpy.client import Client
-from twitchpy.errors import ClientError
 
 from streamcontroller_plugin_tools import BackendBase
 
@@ -101,7 +100,7 @@ class Backend(BackendBase):
             return 'Not Live'
         return str(streams[0].viewer_count)
 
-    def toggle_chat_mode(self, mode: str) -> str:
+    def toggle_chat_mode(self, mode: str) -> bool:
         if not self.twitch:
             return
         self.validate_auth()
@@ -109,7 +108,7 @@ class Backend(BackendBase):
         updated = not getattr(current, mode)
         self.twitch.update_chat_settings(
             self.user_id, self.user_id, **{mode: updated})
-        return str(updated)
+        return updated
 
     def get_chat_settings(self) -> dict:
         if not self.twitch:
@@ -142,12 +141,12 @@ class Backend(BackendBase):
         self.validate_auth()
         self.twitch.start_commercial(self.user_id, length)
 
-    def get_next_ad(self) -> datetime:
+    def get_next_ad(self) -> tuple[datetime, int]:
         if not self.twitch:
             return "Not Live"
         self.validate_auth()
         schedule = self.twitch.get_ad_schedule(self.user_id)
-        return schedule.next_ad_at
+        return schedule.next_ad_at, schedule.snooze_count
 
     def update_client_credentials(self, client_id: str, client_secret: str) -> None:
         if None in (client_id, client_secret) or "" in (client_id, client_secret):

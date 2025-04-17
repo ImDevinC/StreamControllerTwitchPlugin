@@ -12,30 +12,126 @@ from src.backend.PluginManager.ActionInputSupport import ActionInputSupport
 
 # Import actions
 from .settings import PluginSettings
-from .actions.message import SendMessage
-from .actions.chat_mode import ChatMode
-from .actions.clip import Clip
-from .actions.marker import Marker
-from .actions.viewers import Viewers
-from .actions.play_ad import PlayAd
-from .actions.snooze_ad import SnoozeAd
-from .actions.ad_schedule import NextAd
+from .actions.SendMessage import SendMessage
+from .actions.Clip import Clip
+from .actions.ShowViewers import ShowViewers
+from .actions.Marker import Marker
+from .actions.ChatMode import ChatMode
+from .actions.PlayAd import PlayAd
+from .actions.AdSchedule import AdSchedule
 
 
 class PluginTemplate(PluginBase):
-    def __init__(self):
-        super().__init__()
+    def _add_icons(self):
+        self.add_icon("chat", self.get_asset_path("chat.png"))
+        self.add_icon("camera", self.get_asset_path("camera.png"))
+        self.add_icon("bookmark", self.get_asset_path("bookmark.png"))
+        self.add_icon("view", self.get_asset_path("view.png"))
+        self.add_icon("follower_mode", self.get_asset_path("follower.png"))
+        self.add_icon("subscriber_mode", self.get_asset_path("subscriber.png"))
+        self.add_icon("emote_mode", self.get_asset_path("emote.png"))
+        self.add_icon("slow_mode", self.get_asset_path("slow.png"))
+        self.add_icon("money", self.get_asset_path("money.png"))
+        self.add_icon("delay", self.get_asset_path("delay.png"))
 
-        self.has_plugin_settings = True
+    def _add_colors(self):
+        self.add_color("default", [0, 0, 0, 0])
+        self.add_color("warning", [255, 244, 79, 255])
+        self.add_color("alert", [224, 102, 102, 255])
 
-        self.lm = self.locale_manager
-        self.lm.set_to_os_default()
+    def _register_actions(self):
+        self.message_action_holder = ActionHolder(
+            plugin_base=self,
+            action_base=SendMessage,
+            action_id_suffix="SendMessage",
+            action_name="Send Chat Message",
+            action_support={
+                Input.Key: ActionInputSupport.SUPPORTED,
+                Input.Dial: ActionInputSupport.UNTESTED,
+                Input.Touchscreen: ActionInputSupport.UNTESTED,
+            }
+        )
+        self.add_action_holder(self.message_action_holder)
 
-        self._settings_manager = PluginSettings(self)
+        self.clip_action_holder = ActionHolder(
+            plugin_base=self,
+            action_base=Clip,
+            action_id_suffix="Clip",
+            action_name="Create clip",
+            action_support={
+                Input.Key: ActionInputSupport.SUPPORTED,
+                Input.Dial: ActionInputSupport.UNTESTED,
+                Input.Touchscreen: ActionInputSupport.UNTESTED,
+            }
+        )
+        self.add_action_holder(self.clip_action_holder)
 
-        self.auth_callback_fn: callable = None
+        self.viewers_action_holder = ActionHolder(
+            plugin_base=self,
+            action_base=ShowViewers,
+            action_id_suffix="ShowViewers",
+            action_name="Show Viewers",
+            action_support={
+                Input.Key: ActionInputSupport.SUPPORTED,
+                Input.Dial: ActionInputSupport.UNTESTED,
+                Input.Touchscreen: ActionInputSupport.UNTESTED,
+            }
+        )
+        self.add_action_holder(self.viewers_action_holder)
 
-        # Launch backend
+        self.marker_actions_holder = ActionHolder(
+            plugin_base=self,
+            action_base=Marker,
+            action_id_suffix="Marker",
+            action_name="Create Marker",
+            action_support={
+                Input.Key: ActionInputSupport.SUPPORTED,
+                Input.Dial: ActionInputSupport.UNTESTED,
+                Input.Touchscreen: ActionInputSupport.UNTESTED,
+            }
+        )
+        self.add_action_holder(self.marker_actions_holder)
+
+        self.chatmode_actions_holder = ActionHolder(
+            plugin_base=self,
+            action_base=ChatMode,
+            action_id_suffix="ChatMode",
+            action_name="Chat Mode",
+            action_support={
+                Input.Key: ActionInputSupport.SUPPORTED,
+                Input.Dial: ActionInputSupport.UNTESTED,
+                Input.Touchscreen: ActionInputSupport.UNTESTED,
+            }
+        )
+        self.add_action_holder(self.chatmode_actions_holder)
+
+        self.playad_action_holder = ActionHolder(
+            plugin_base=self,
+            action_base=PlayAd,
+            action_id_suffix="PlayAd",
+            action_name="Play Ad",
+            action_support={
+                Input.Key: ActionInputSupport.SUPPORTED,
+                Input.Dial: ActionInputSupport.UNTESTED,
+                Input.Touchscreen: ActionInputSupport.UNTESTED,
+            }
+        )
+        self.add_action_holder(self.playad_action_holder)
+
+        self.ad_schedule_action_holder = ActionHolder(
+            plugin_base=self,
+            action_base=AdSchedule,
+            action_id_suffix="AdSchedule",
+            action_name="Ad Schedule",
+            action_support={
+                Input.Key: ActionInputSupport.SUPPORTED,
+                Input.Dial: ActionInputSupport.UNTESTED,
+                Input.Touchscreen: ActionInputSupport.UNTESTED,
+            }
+        )
+        self.add_action_holder(self.ad_schedule_action_holder)
+
+    def _setup_backend(self):
         backend_path = os.path.join(self.PATH, "twitch_backend.py")
         self.launch_backend(backend_path=backend_path, open_in_terminal=False,
                             venv_path=os.path.join(self.PATH, ".venv"))
@@ -54,110 +150,19 @@ class PluginTemplate(PluginBase):
             self.backend.auth_with_code(
                 client_id, client_secret, auth_code)
 
-        # Register actions
-        self.message_action_holder = ActionHolder(
-            plugin_base=self,
-            action_base=SendMessage,
-            action_id="com_imdevinc_StreamControllerTwitchPlugin::SendMessage",
-            action_name="Send Chat Message",
-            action_support={
-                Input.Key: ActionInputSupport.SUPPORTED,
-                Input.Dial: ActionInputSupport.UNTESTED,
-                Input.Touchscreen: ActionInputSupport.UNTESTED,
-            }
-        )
-        self.add_action_holder(self.message_action_holder)
+    def __init__(self):
+        super().__init__(use_legacy_locale=False)
 
-        self.viewer_action_holder = ActionHolder(
-            plugin_base=self,
-            action_base=Viewers,
-            action_id="com_imdevinc_StreamControllerTwitchPlugin::Viewers",
-            action_name="Show Viewers",
-            action_support={
-                Input.Key: ActionInputSupport.SUPPORTED,
-                Input.Dial: ActionInputSupport.UNTESTED,
-                Input.Touchscreen: ActionInputSupport.UNTESTED,
-            }
-        )
-        self.add_action_holder(self.viewer_action_holder)
+        self.has_plugin_settings = True
+        self.lm = self.locale_manager
+        self.lm.set_to_os_default()
+        self._settings_manager = PluginSettings(self)
+        self.auth_callback_fn: callable = None
 
-        self.marker_action_holder = ActionHolder(
-            plugin_base=self,
-            action_base=Marker,
-            action_id="com_imdevinc_StreamControllerTwitchPlugin::Marker",
-            action_name="Create Stream Marker",
-            action_support={
-                Input.Key: ActionInputSupport.SUPPORTED,
-                Input.Dial: ActionInputSupport.UNTESTED,
-                Input.Touchscreen: ActionInputSupport.UNTESTED,
-            }
-        )
-        self.add_action_holder(self.marker_action_holder)
-
-        self.chat_mode_action_holder = ActionHolder(
-            plugin_base=self,
-            action_base=ChatMode,
-            action_id="com_imdevinc_StreamControllerTwitchPlugin::ChatMode",
-            action_name="Toggle Chat Mode",
-            action_support={
-                Input.Key: ActionInputSupport.SUPPORTED,
-                Input.Dial: ActionInputSupport.UNTESTED,
-                Input.Touchscreen: ActionInputSupport.UNTESTED,
-            }
-        )
-        self.add_action_holder(self.chat_mode_action_holder)
-
-        self.clip_action_holder = ActionHolder(
-            plugin_base=self,
-            action_base=Clip,
-            action_id="com_imdevinc_StreamControllerTwitchPlugin::Clip",
-            action_name="Create Clip",
-            action_support={
-                Input.Key: ActionInputSupport.SUPPORTED,
-                Input.Dial: ActionInputSupport.UNTESTED,
-                Input.Touchscreen: ActionInputSupport.UNTESTED,
-            }
-        )
-        self.add_action_holder(self.clip_action_holder)
-
-        self.snooze_ad_action_holder = ActionHolder(
-            plugin_base=self,
-            action_base=SnoozeAd,
-            action_id="com_imdevinc_StreamControllerTwitchPlugin::SnoozeAd",
-            action_name="Snooze Ad",
-            action_support={
-                Input.Key: ActionInputSupport.SUPPORTED,
-                Input.Dial: ActionInputSupport.UNTESTED,
-                Input.Touchscreen: ActionInputSupport.UNTESTED,
-            }
-        )
-        self.add_action_holder(self.snooze_ad_action_holder)
-
-        self.play_ad_action_holder = ActionHolder(
-            plugin_base=self,
-            action_base=PlayAd,
-            action_id="com_imdevinc_StreamControllerTwitchPlugin::PlayAd",
-            action_name="Play Ad",
-            action_support={
-                Input.Key: ActionInputSupport.SUPPORTED,
-                Input.Dial: ActionInputSupport.UNTESTED,
-                Input.Touchscreen: ActionInputSupport.UNTESTED,
-            }
-        )
-        self.add_action_holder(self.play_ad_action_holder)
-
-        # self.next_ad_action_holder = ActionHolder(
-        #    plugin_base=self,
-        #    action_base=NextAd,
-        #    action_id="com_imdevinc_StreamControllerTwitchPlugin::NextAd",
-        #    action_name="Next Ad",
-        #    action_support={
-        #        Input.Key: ActionInputSupport.SUPPORTED,
-        #        Input.Dial: ActionInputSupport.UNTESTED,
-        #        Input.Touchscreen: ActionInputSupport.UNTESTED,
-        #    }
-        # )
-        # self.add_action_holder(self.next_ad_action_holder)
+        self._add_icons()
+        self._add_colors()
+        self._setup_backend()
+        self._register_actions()
 
         try:
             with open(os.path.join(self.PATH, "manifest.json"), "r", encoding="UTF-8") as f:
@@ -170,7 +175,6 @@ class PluginTemplate(PluginBase):
             "app_version": data.get("app-version", "0.0.0")
         }
 
-        # Register plugin
         self.register(
             plugin_name="Twitch Integration",
             github_repo="https://github.com/imdevinc/StreamControllerTwitchPlugin",

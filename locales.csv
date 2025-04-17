@@ -1,0 +1,16 @@
+key;en_US
+ad-options-dropdown;Ad Durations
+ad-snooze;Snooze Ads
+ad-snooze-subtitle;Snoozes ad for 5 minutes when pushed
+chat-channel-id;Twitch Channel to send message to
+chat-message-text;Text to send
+chat-toggle-dropdown;Chat Mode
+;;
+actions.base.credentials.authenticated;Authenticated successfully
+actions.base.credentials.failed;Authenication failed
+actions.base.credentials.title;Twitch Credentials
+actions.base.credentials.validate;Validate
+actions.base.twitch_client_id;Twitch Client ID
+actions.base.twitch_client_secret;Twitch Client Secret
+actions.info.link.label;Checkout how to configure this plugin on
+actions.info.link.text;GitHub

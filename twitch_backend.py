@@ -3,7 +3,7 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs, urlencode
 import threading
 import requests
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from loguru import logger as log
 from twitchpy.client import Client
@@ -143,7 +143,7 @@ class Backend(BackendBase):
 
     def get_next_ad(self) -> tuple[datetime, int]:
         if not self.twitch:
-            return "Not Live"
+            return datetime.now() - timedelta(minutes=1), -1
         self.validate_auth()
         schedule = self.twitch.get_ad_schedule(self.user_id)
         return schedule.next_ad_at, schedule.snooze_count

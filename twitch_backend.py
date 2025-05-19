@@ -7,6 +7,8 @@ from datetime import datetime, timedelta
 
 from loguru import logger as log
 from twitchpy.client import Client
+from igdb.wrapper import IGDBWrapper
+from igdb.igdbapi_pb2 import GameResult, CoverResult
 
 from streamcontroller_plugin_tools import BackendBase
 
@@ -48,6 +50,7 @@ class Backend(BackendBase):
     def __init__(self):
         super().__init__()
         self.twitch: Client = None
+        self.igdb: IGDBWrapper = None
         self.user_id: str = None
         self.token_path: str = None
         self.client_secret: str = None
@@ -200,6 +203,7 @@ class Backend(BackendBase):
             self.frontend.save_auth_settings(
                 client_id, client_secret, auth_code)
             self.frontend.on_auth_callback(True)
+            self._auth_igdb(client_id, client_secret)
         except Exception as e:
             log.error("failed to authenticate", e)
             self.auth_failed()
@@ -210,6 +214,50 @@ class Backend(BackendBase):
 
     def is_authed(self) -> bool:
         return self.user_id != None
+
+    def _auth_igdb(self, client_id: str, client_secret: str):
+        params = {
+            'client_id': client_id,
+            'client_secret': client_secret,
+            'grant_type': 'client_credentials'
+        }
+        encoded_params = urlencode(params)
+        try:
+            resp = requests.post(
+                f'https://id.twitch.tv/oauth2/token?{encoded_params}', timeout=3)
+            resp.raise_for_status()
+            access_token = resp.json()['access_token']
+            self.igdb = IGDBWrapper(client_id, access_token)
+        except Exception as ex:
+            log.error("failed to get access token for IGDB", ex)
+            return
+        self.search_category("Monster Hunter Wilds")
+
+    def search_category(self, query: str):
+        if not self.igdb:
+            self._auth_igdb(self.client_id, self.client_secret)
+        try:
+            resp = self.igdb.api_request(
+                'games.pb', f'search "{query}"; fields id, name; offset 0;where version_parent = null & parent_game = null;')
+            games_message = GameResult()
+            games_message.ParseFromString(resp)
+            games = games_message.games
+        except Exception as ex:
+            log.error(f'failed to search for category {ex}')
+            return
+
+    def get_category_artwork(self, category: str):
+        if not self.igdb:
+            self._auth_igdb(self.client_id, self.client_secret)
+        try:
+            resp = self.igdb.api_request(
+                'covers.pb', f'where game={category};fields url;limit 1;')
+            cover_message = CoverResult()
+            cover_message.ParseFromString(resp)
+            cover = cover_message.covers
+        except Exception as ex:
+            log.error(f'failed to get artwork for category {category}. {ex}')
+            return
 
 
 backend = Backend()

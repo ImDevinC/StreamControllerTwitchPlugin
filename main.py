@@ -19,6 +19,7 @@ from .actions.Marker import Marker
 from .actions.ChatMode import ChatMode
 from .actions.PlayAd import PlayAd
 from .actions.AdSchedule import AdSchedule
+from .actions.ChangeCategory import ChangeCategory
 
 
 class PluginTemplate(PluginBase):
@@ -130,6 +131,19 @@ class PluginTemplate(PluginBase):
             }
         )
         self.add_action_holder(self.ad_schedule_action_holder)
+
+        self.change_category_action_holder = ActionHolder(
+            plugin_base=self,
+            action_base=ChangeCategory,
+            action_id_suffix="ChangeCategory",
+            action_name="Change Category",
+            action_support={
+                Input.Key: ActionInputSupport.SUPPORTED,
+                Input.Dial: ActionInputSupport.UNTESTED,
+                Input.Touchscreen: ActionInputSupport.UNTESTED,
+            }
+        )
+        self.add_action_holder(self.change_category_action_holder)
 
     def _setup_backend(self):
         backend_path = os.path.join(self.PATH, "twitch_backend.py")

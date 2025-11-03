@@ -3,12 +3,14 @@ import globals as gl
 import json
 
 from loguru import logger
+from gi.repository import Gtk
 
 # Import StreamController modules
 from src.backend.PluginManager.PluginBase import PluginBase
 from src.backend.PluginManager.ActionHolder import ActionHolder
 from src.backend.DeckManagement.InputIdentifier import Input
 from src.backend.PluginManager.ActionInputSupport import ActionInputSupport
+from src.backend.DeckManagement.ImageHelpers import image2pixbuf
 
 # Import actions
 from .settings import PluginSettings
@@ -22,7 +24,12 @@ from .actions.AdSchedule import AdSchedule
 
 
 class PluginTemplate(PluginBase):
+    def get_selector_icon(self) -> Gtk.Widget:
+        _, rendered = self.asset_manager.icons.get_asset_values("main")
+        return Gtk.Image.new_from_pixbuf(image2pixbuf(rendered))
+
     def _add_icons(self):
+        self.add_icon("main", self.get_asset_path("glitch_flat_purple.png"))
         self.add_icon("chat", self.get_asset_path("chat.png"))
         self.add_icon("camera", self.get_asset_path("camera.png"))
         self.add_icon("bookmark", self.get_asset_path("bookmark.png"))

@@ -2,6 +2,7 @@ from enum import StrEnum, Enum
 from datetime import datetime, timedelta
 from threading import Thread
 from time import sleep
+from typing import Any, List
 
 from gi.repository import GLib
 from GtkHelper.GenerativeUI.SwitchRow import SwitchRow
@@ -30,7 +31,7 @@ class Colors(StrEnum):
 
 
 class AdSchedule(TwitchCore):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.icon_keys = [Icons.DELAY]
         self.current_icon = self.get_icon(Icons.DELAY)
@@ -41,13 +42,13 @@ class AdSchedule(TwitchCore):
         self._next_ad: datetime = datetime.now()
         self._snoozes: int = -1
 
-    def on_ready(self):
+    def on_ready(self) -> None:
         super().on_ready()
         Thread(
             target=self._update_ad_display, daemon=True, name="update_ad_display"
         ).start()
 
-    def create_event_assigners(self):
+    def create_event_assigners(self) -> None:
         self.event_manager.add_event_assigner(
             EventAssigner(
                 id="snooze-ad",
@@ -57,7 +58,7 @@ class AdSchedule(TwitchCore):
             )
         )
 
-    def create_generative_ui(self):
+    def create_generative_ui(self) -> None:
         self._skip_ad_switch = SwitchRow(
             action_core=self,
             var_name="ad.snooze",
@@ -67,17 +68,17 @@ class AdSchedule(TwitchCore):
             complex_var_name=True,
         )
 
-    def get_config_rows(self):
+    def get_config_rows(self) -> List[Any]:
         return [self._skip_ad_switch.widget]
 
-    def _update_background_color(self, color: str):
+    def _update_background_color(self, color: str) -> None:
         def _update():
             self.current_color = self.get_color(color)
             self.display_color()
 
         GLib.idle_add(_update)
 
-    def _update_ad_display(self):
+    def _update_ad_display(self) -> None:
         """Consolidated update loop that fetches ad schedule and updates display."""
         last_fetch_time = datetime.now() - timedelta(
             seconds=AD_SCHEDULE_FETCH_INTERVAL_SECONDS
@@ -133,13 +134,13 @@ class AdSchedule(TwitchCore):
 
             sleep(AD_DISPLAY_UPDATE_INTERVAL_SECONDS)
 
-    def _convert_seconds_to_hh_mm_ss(self, seconds) -> str:
+    def _convert_seconds_to_hh_mm_ss(self, seconds: float) -> str:
         hours = seconds // 3600
         minutes = (seconds % 3600) // 60
         remaining_seconds = seconds % 60
         return f"{int(hours):02}:{int(minutes):02}:{int(remaining_seconds):02}"
 
-    def _on_snooze_ad(self, _):
+    def _on_snooze_ad(self, _: Any) -> None:
         if not self._skip_ad_switch.get_active():
             return
         try:

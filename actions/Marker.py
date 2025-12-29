@@ -1,4 +1,5 @@
 from enum import StrEnum
+from typing import Any
 
 from loguru import logger as log
 
@@ -14,14 +15,14 @@ class Icons(StrEnum):
 
 
 class Marker(TwitchCore):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.icon_keys = [Icons.MARKER]
         self.current_icon = self.get_icon(Icons.MARKER)
         self.icon_name = Icons.MARKER
         self.has_configuration = False
 
-    def create_event_assigners(self):
+    def create_event_assigners(self) -> None:
         self.event_manager.add_event_assigner(
             EventAssigner(
                 id="marker",
@@ -31,7 +32,7 @@ class Marker(TwitchCore):
             )
         )
 
-    def _on_marker(self, _):
+    def _on_marker(self, _: Any) -> None:
         try:
             self.backend.create_marker()
         except Exception as ex:

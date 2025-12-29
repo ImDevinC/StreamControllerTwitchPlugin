@@ -1,4 +1,5 @@
 from enum import StrEnum
+from typing import Any
 
 from loguru import logger as log
 
@@ -14,14 +15,14 @@ class Icons(StrEnum):
 
 
 class Clip(TwitchCore):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.icon_keys = [Icons.CLIP]
         self.current_icon = self.get_icon(Icons.CLIP)
         self.icon_name = Icons.CLIP
         self.has_configuration = False
 
-    def create_event_assigners(self):
+    def create_event_assigners(self) -> None:
         self.event_manager.add_event_assigner(
             EventAssigner(
                 id="clip",
@@ -31,7 +32,7 @@ class Clip(TwitchCore):
             )
         )
 
-    def _on_clip(self, _):
+    def _on_clip(self, _: Any) -> None:
         try:
             self.backend.create_clip()
         except Exception as ex:

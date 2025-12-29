@@ -1,4 +1,5 @@
 from enum import StrEnum, Enum
+from typing import Any, List, Optional
 
 from loguru import logger as log
 
@@ -16,14 +17,14 @@ class Icons(StrEnum):
 
 
 class PlayAd(TwitchCore):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.icon_keys = [Icons.AD]
         self.current_icon = self.get_icon(Icons.AD)
         self.icon_name = Icons.AD
         self.has_configuration = True
 
-    def create_generative_ui(self):
+    def create_generative_ui(self) -> None:
         options = [
             SimpleComboRowItem(str(x), f"{x} seconds") for x in [30, 60, 90, 120]
         ]
@@ -36,10 +37,10 @@ class PlayAd(TwitchCore):
             complex_var_name=True,
         )
 
-    def get_config_rows(self):
+    def get_config_rows(self) -> List[Any]:
         return [self._time_row.widget]
 
-    def create_event_assigners(self):
+    def create_event_assigners(self) -> None:
         self.event_manager.add_event_assigner(
             EventAssigner(
                 id="play-ad",
@@ -49,11 +50,12 @@ class PlayAd(TwitchCore):
             )
         )
 
-    def _on_play_ad(self, _):
-        time = None
+    def _on_play_ad(self, _: Any) -> None:
+        time: Optional[str] = None
         try:
             time = self._time_row.get_selected_item().get_value()
-            self.backend.play_ad(int(time))
+            if time:
+                self.backend.play_ad(int(time))
         except Exception as ex:
             log.error(
                 f"Failed to play ad{f' (duration: {time}s)' if time else ''}: {ex}"

@@ -1,4 +1,5 @@
 from enum import StrEnum
+from typing import Any, List
 
 from .TwitchCore import TwitchCore
 from src.backend.PluginManager.EventAssigner import EventAssigner
@@ -16,14 +17,14 @@ class Icons(StrEnum):
 
 
 class SendMessage(TwitchCore):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.icon_keys = [Icons.CHAT]
         self.current_icon = self.get_icon(Icons.CHAT)
         self.icon_name = Icons.CHAT
         self.has_configuration = True
 
-    def create_event_assigners(self):
+    def create_event_assigners(self) -> None:
         self.event_manager.add_event_assigner(
             EventAssigner(
                 id="chat",
@@ -33,7 +34,7 @@ class SendMessage(TwitchCore):
             )
         )
 
-    def create_generative_ui(self):
+    def create_generative_ui(self) -> None:
         self.message_row = EntryRow(
             action_core=self,
             var_name="chat.message_text",
@@ -51,10 +52,10 @@ class SendMessage(TwitchCore):
             complex_var_name=True,
         )
 
-    def get_config_rows(self):
+    def get_config_rows(self) -> List[Any]:
         return [self.message_row.widget, self.channel_row.widget]
 
-    def _on_chat(self, _):
+    def _on_chat(self, _: Any) -> None:
         message = self.message_row.get_value()
         channel = self.channel_row.get_value()
         try:

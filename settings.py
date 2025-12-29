@@ -22,18 +22,34 @@ class PluginSettings:
         self._plugin_base = plugin_base
 
     def get_settings_area(self) -> Adw.PreferencesGroup:
-        if not self._plugin_base.backend.is_authed():
-            self._status_label = Gtk.Label(label=self._plugin_base.lm.get(
-                "actions.base.credentials.failed"), css_classes=["twitch-controller-red"])
+        if not self._plugin_base.backend or not self._plugin_base.backend_initialized:
+            self._status_label = Gtk.Label(
+                label=self._plugin_base.lm.get(
+                    "actions.base.credentials.failed"),
+                css_classes=["twitch-controller-red"],
+            )
+        elif not self._plugin_base.backend.is_authed():
+            self._status_label = Gtk.Label(
+                label=self._plugin_base.lm.get(
+                    "actions.base.credentials.failed"),
+                css_classes=["twitch-controller-red"],
+            )
         else:
-            self._status_label = Gtk.Label(label=self._plugin_base.lm.get(
-                "actions.base.credentials.authenticated"), css_classes=["twitch-controller-green"])
+            self._status_label = Gtk.Label(
+                label=self._plugin_base.lm.get(
+                    "actions.base.credentials.authenticated"
+                ),
+                css_classes=["twitch-controller-green"],
+            )
         self._client_id = Adw.EntryRow(
-            title=self._plugin_base.lm.get("actions.base.twitch_client_id"))
+            title=self._plugin_base.lm.get("actions.base.twitch_client_id")
+        )
         self._client_secret = Adw.PasswordEntryRow(
-            title=self._plugin_base.lm.get("actions.base.twitch_client_secret"))
+            title=self._plugin_base.lm.get("actions.base.twitch_client_secret")
+        )
         self._auth_button = Gtk.Button(
-            label=self._plugin_base.lm.get("actions.base.credentials.validate"))
+            label=self._plugin_base.lm.get("actions.base.credentials.validate")
+        )
         self._auth_button.set_margin_top(10)
         self._auth_button.set_margin_bottom(10)
         self._client_id.connect("notify::text", self._on_change_client_id)
@@ -44,7 +60,9 @@ class PluginSettings:
         gh_link_label = self._plugin_base.lm.get("actions.info.link.label")
         gh_link_text = self._plugin_base.lm.get("actions.info.link.text")
         gh_label = Gtk.Label(
-            use_markup=True, label=f"{gh_link_label} <a href=\"https://github.com/ImDevinC/StreamControllerTwitchPlugin\">{gh_link_text}</a>")
+            use_markup=True,
+            label=f'{gh_link_label} <a href="https://github.com/ImDevinC/StreamControllerTwitchPlugin">{gh_link_text}</a>',
+        )
 
         self._load_settings()
         self._enable_auth()

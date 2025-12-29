@@ -2,6 +2,7 @@ from enum import StrEnum, Enum
 from threading import Thread
 from time import sleep
 
+from gi.repository import GLib
 from .TwitchCore import TwitchCore
 from src.backend.PluginManager.EventAssigner import EventAssigner
 from src.backend.PluginManager.InputBases import Input
@@ -56,12 +57,13 @@ class ChatMode(TwitchCore):
             ],
             title="chat-toggle-dropdown",
             complex_var_name=True,
-            on_change=self._change_chat_mode
+            on_change=self._change_chat_mode,
         )
 
     def on_ready(self):
         Thread(
-            target=self._update_chat_mode, daemon=True, name="update_chat_mode").start()
+            target=self._update_chat_mode, daemon=True, name="update_chat_mode"
+        ).start()
 
     def get_config_rows(self):
         return [self._chat_select_row.widget]
@@ -73,7 +75,8 @@ class ChatMode(TwitchCore):
 
     def _update_icon(self, mode: str, enabled: bool):
         # TODO: Custom icons for enabled/disabled
-        self.set_center_label("Enabled" if enabled else "Disabled")
+        label = "Enabled" if enabled else "Disabled"
+        GLib.idle_add(lambda: self.set_center_label(label))
 
     def _update_chat_mode(self):
         while self.get_is_present():

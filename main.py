@@ -48,10 +48,7 @@ class PluginTemplate(PluginBase):
 
     def _register_actions(self):
         self.message_action_holder = ActionHolder(
-            plugin_base=self,
-            action_base=SendMessage,
-            action_id_suffix="SendMessage",
-            action_name="Send Chat Message",
+            plugin_base=self, action_base=SendMessage, action_id_suffix="SendMessage", action_name="Send Chat Message",
             action_support={
                 Input.Key: ActionInputSupport.SUPPORTED,
                 Input.Dial: ActionInputSupport.UNTESTED,
@@ -69,7 +66,7 @@ class PluginTemplate(PluginBase):
                 Input.Key: ActionInputSupport.SUPPORTED,
                 Input.Dial: ActionInputSupport.UNTESTED,
                 Input.Touchscreen: ActionInputSupport.UNTESTED,
-            }
+            },
         )
         self.add_action_holder(self.clip_action_holder)
 
@@ -82,7 +79,7 @@ class PluginTemplate(PluginBase):
                 Input.Key: ActionInputSupport.SUPPORTED,
                 Input.Dial: ActionInputSupport.UNTESTED,
                 Input.Touchscreen: ActionInputSupport.UNTESTED,
-            }
+            },
         )
         self.add_action_holder(self.viewers_action_holder)
 
@@ -95,7 +92,7 @@ class PluginTemplate(PluginBase):
                 Input.Key: ActionInputSupport.SUPPORTED,
                 Input.Dial: ActionInputSupport.UNTESTED,
                 Input.Touchscreen: ActionInputSupport.UNTESTED,
-            }
+            },
         )
         self.add_action_holder(self.marker_actions_holder)
 
@@ -108,7 +105,7 @@ class PluginTemplate(PluginBase):
                 Input.Key: ActionInputSupport.SUPPORTED,
                 Input.Dial: ActionInputSupport.UNTESTED,
                 Input.Touchscreen: ActionInputSupport.UNTESTED,
-            }
+            },
         )
         self.add_action_holder(self.chatmode_actions_holder)
 
@@ -121,7 +118,7 @@ class PluginTemplate(PluginBase):
                 Input.Key: ActionInputSupport.SUPPORTED,
                 Input.Dial: ActionInputSupport.UNTESTED,
                 Input.Touchscreen: ActionInputSupport.UNTESTED,
-            }
+            },
         )
         self.add_action_holder(self.playad_action_holder)
 
@@ -134,28 +131,36 @@ class PluginTemplate(PluginBase):
                 Input.Key: ActionInputSupport.SUPPORTED,
                 Input.Dial: ActionInputSupport.UNTESTED,
                 Input.Touchscreen: ActionInputSupport.UNTESTED,
-            }
+            },
         )
         self.add_action_holder(self.ad_schedule_action_holder)
 
     def _setup_backend(self):
         backend_path = os.path.join(self.PATH, "twitch_backend.py")
-        self.launch_backend(backend_path=backend_path, open_in_terminal=False,
-                            venv_path=os.path.join(self.PATH, ".venv"))
-        self.wait_for_backend(tries=5)
+        self.launch_backend(
+            backend_path=backend_path,
+            open_in_terminal=False,
+            venv_path=os.path.join(self.PATH, ".venv"),
+        )
+        backend_ready = self.wait_for_backend(tries=5)
+        if not backend_ready:
+            logger.error(
+                "Failed to initialize Twitch backend after 5 attempts")
+            return False
 
         settings = self.get_settings()
-        client_id = settings.get('client_id', '')
-        client_secret = settings.get('client_secret', '')
-        auth_code = settings.get('auth_code', '')
+        client_id = settings.get("client_id", "")
+        client_secret = settings.get("client_secret", "")
+        auth_code = settings.get("auth_code", "")
 
         settings_path = os.path.join(
-            gl.DATA_PATH, 'settings', 'plugins', self.get_plugin_id_from_folder_name())
+            gl.DATA_PATH, "settings", "plugins", self.get_plugin_id_from_folder_name()
+        )
         os.makedirs(settings_path, exist_ok=True)
         self.backend.set_token_path(os.path.join(settings_path, "keys.json"))
         if client_id and client_secret and auth_code:
-            self.backend.auth_with_code(
-                client_id, client_secret, auth_code)
+            self.backend.auth_with_code(client_id, client_secret, auth_code)
+        return True
 
     def __init__(self):
         super().__init__(use_legacy_locale=False)
@@ -165,36 +170,45 @@ class PluginTemplate(PluginBase):
         self.lm.set_to_os_default()
         self._settings_manager = PluginSettings(self)
         self.auth_callback_fn: callable = None
+        self.backend_initialized = False
 
         self._add_icons()
         self._add_colors()
-        self._setup_backend()
+        self.backend_initialized = self._setup_backend()
+        if not self.backend_initialized:
+            logger.warning(
+                "Twitch plugin loaded but backend failed to initialize. Please check settings."
+            )
         self._register_actions()
 
         try:
-            with open(os.path.join(self.PATH, "manifest.json"), "r", encoding="UTF-8") as f:
+            with open(
+                os.path.join(self.PATH, "manifest.json"), "r", encoding="UTF-8"
+            ) as f:
                 data = json.load(f)
         except Exception as ex:
             logger.error(ex)
             data = {}
         app_manifest = {
             "plugin_version": data.get("version", "0.0.0"),
-            "app_version": data.get("app-version", "0.0.0")
+            "app_version": data.get("app-version", "0.0.0"),
         }
 
         self.register(
             plugin_name="Twitch Integration",
             github_repo="https://github.com/imdevinc/StreamControllerTwitchPlugin",
             plugin_version=app_manifest.get("plugin_version"),
-            app_version=app_manifest.get("app_version")
+            app_version=app_manifest.get("app_version"),
         )
         self.add_css_stylesheet(os.path.join(self.PATH, "style.css"))
 
-    def save_auth_settings(self, client_id: str, client_secret: str, auth_code: str) -> None:
+    def save_auth_settings(
+        self, client_id: str, client_secret: str, auth_code: str
+    ) -> None:
         settings = self.get_settings()
-        settings['client_id'] = client_id
-        settings['client_secret'] = client_secret
-        settings['auth_code'] = auth_code
+        settings["client_id"] = client_id
+        settings["client_secret"] = client_secret
+        settings["auth_code"] = auth_code
         self.set_settings(settings)
 
     def on_auth_callback(self, success: bool, message: str = "") -> None:

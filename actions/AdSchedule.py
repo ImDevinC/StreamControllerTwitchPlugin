@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from threading import Thread
 from time import sleep
 
+from gi.repository import GLib
 from GtkHelper.GenerativeUI.SwitchRow import SwitchRow
 from .TwitchCore import TwitchCore
 from src.backend.PluginManager.EventAssigner import EventAssigner
@@ -37,9 +38,11 @@ class AdSchedule(TwitchCore):
     def on_ready(self):
         super().on_ready()
         Thread(
-            target=self._get_ad_schedule, daemon=True, name="get_ad_schedule").start()
+            target=self._get_ad_schedule, daemon=True, name="get_ad_schedule"
+        ).start()
         Thread(
-            target=self._update_ad_timer, daemon=True, name="update_ad_timer").start()
+            target=self._update_ad_timer, daemon=True, name="update_ad_timer"
+        ).start()
 
     def create_event_assigners(self):
         self.event_manager.add_event_assigner(
@@ -58,29 +61,37 @@ class AdSchedule(TwitchCore):
             default_value=True,
             title="ad-snooze",
             subtitle="Snoozes ad for 5 minutes when pushed",
-            complex_var_name=True
+            complex_var_name=True,
         )
 
     def get_config_rows(self):
         return [self._skip_ad_switch.widget]
 
     def _update_background_color(self, color: str):
-        self.current_color = self.get_color(color)
-        self.display_color()
+        def _update():
+            self.current_color = self.get_color(color)
+            self.display_color()
+
+        GLib.idle_add(_update)
 
     def _update_ad_timer(self):
         while self.get_is_present():
             self.display_color()
             now = datetime.now()
-            self.set_bottom_label(
-                str(self._snoozes) if (self._snoozes >= 0 and self._skip_ad_switch.get_active()) else "")
+            snooze_label = (
+                str(self._snoozes)
+                if (self._snoozes >= 0 and self._skip_ad_switch.get_active())
+                else ""
+            )
+            GLib.idle_add(lambda: self.set_bottom_label(snooze_label))
             try:
                 if self._next_ad < now:
                     self._update_background_color(Colors.DEFAULT)
-                    self.set_center_label("")
+                    GLib.idle_add(lambda: self.set_center_label(""))
                     continue
                 diff = (self._next_ad - now).total_seconds()
-                self.set_center_label(self._convert_seconds_to_hh_mm_ss(diff))
+                time_label = self._convert_seconds_to_hh_mm_ss(diff)
+                GLib.idle_add(lambda: self.set_center_label(time_label))
                 if diff <= 60:
                     self._update_background_color(Colors.ALERT)
                     continue

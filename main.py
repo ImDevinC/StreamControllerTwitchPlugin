@@ -146,7 +146,6 @@ class PluginTemplate(PluginBase):
         if not backend_ready:
             logger.error(
                 "Failed to initialize Twitch backend after 5 attempts")
-            return False
 
         settings = self.get_settings()
         client_id = settings.get("client_id", "")

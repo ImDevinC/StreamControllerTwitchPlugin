@@ -27,7 +27,7 @@ class SendMessage(TwitchCore):
                 id="chat",
                 ui_label="Message",
                 default_event=Input.Key.Events.DOWN,
-                callback=self._on_chat
+                callback=self._on_chat,
             )
         )
 
@@ -58,5 +58,5 @@ class SendMessage(TwitchCore):
         try:
             self.backend.send_message(message, channel)
         except Exception as ex:
-            log.error(ex)
+            log.error(f"Failed to send chat message to channel '{channel}': {ex}")
             self.show_error(3)

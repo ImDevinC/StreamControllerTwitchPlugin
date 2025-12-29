@@ -25,7 +25,7 @@ class Marker(TwitchCore):
                 id="marker",
                 ui_label="Marker",
                 default_event=Input.Key.Events.DOWN,
-                callback=self._on_marker
+                callback=self._on_marker,
             )
         )
 
@@ -33,5 +33,5 @@ class Marker(TwitchCore):
         try:
             self.backend.create_marker()
         except Exception as ex:
-            log.error(ex)
+            log.error(f"Failed to create stream marker: {ex}")
             self.show_error(3)

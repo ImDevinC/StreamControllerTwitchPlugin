@@ -38,10 +38,7 @@ class AdSchedule(TwitchCore):
     def on_ready(self):
         super().on_ready()
         Thread(
-            target=self._get_ad_schedule, daemon=True, name="get_ad_schedule"
-        ).start()
-        Thread(
-            target=self._update_ad_timer, daemon=True, name="update_ad_timer"
+            target=self._update_ad_display, daemon=True, name="update_ad_display"
         ).start()
 
     def create_event_assigners(self):
@@ -74,51 +71,59 @@ class AdSchedule(TwitchCore):
 
         GLib.idle_add(_update)
 
-    def _update_ad_timer(self):
+    def _update_ad_display(self):
+        """Consolidated update loop that fetches ad schedule and updates display."""
+        last_fetch_time = datetime.now() - timedelta(
+            seconds=30
+        )  # Fetch immediately on start
+
         while self.get_is_present():
             self.display_color()
             now = datetime.now()
+
+            # Fetch ad schedule every 30 seconds
+            if (now - last_fetch_time).total_seconds() >= 30:
+                try:
+                    schedule, snoozes = self.backend.get_next_ad()
+                    self._next_ad = schedule
+                    self._snoozes = snoozes
+                    last_fetch_time = now
+                except Exception as ex:
+                    log.error(f"Failed to get ad schedule from Twitch API: {ex}")
+                    self.show_error(3)
+
+            # Update display every second
             snooze_label = (
                 str(self._snoozes)
                 if (self._snoozes >= 0 and self._skip_ad_switch.get_active())
                 else ""
             )
             GLib.idle_add(lambda: self.set_bottom_label(snooze_label))
+
             try:
                 if self._next_ad < now:
                     self._update_background_color(Colors.DEFAULT)
                     GLib.idle_add(lambda: self.set_center_label(""))
+                    sleep(1)
                     continue
                 diff = (self._next_ad - now).total_seconds()
                 time_label = self._convert_seconds_to_hh_mm_ss(diff)
                 GLib.idle_add(lambda: self.set_center_label(time_label))
                 if diff <= 60:
                     self._update_background_color(Colors.ALERT)
-                    continue
-                if diff <= 300:
+                elif diff <= 300:
                     self._update_background_color(Colors.WARNING)
-                    continue
-                self._update_background_color(Colors.DEFAULT)
+                else:
+                    self._update_background_color(Colors.DEFAULT)
             except TypeError:
                 # There is a known issue where the default timestamp returned from
                 # the twitch API is an invalid datetime object and causes an error.
                 # Ignoring it here
                 pass
             except Exception as ex:
-                log.error(ex)
-            sleep(1)
+                log.error(f"Failed to update ad timer display: {ex}")
 
-    def _get_ad_schedule(self):
-        while self.get_is_present():
-            try:
-                schedule, snoozes = self.backend.get_next_ad()
-                self._next_ad = schedule
-                self._snoozes = snoozes
-                self._update_ad_timer()
-            except Exception as ex:
-                log.error(ex)
-                self.show_error(3)
-            sleep(30)
+            sleep(1)
 
     def _convert_seconds_to_hh_mm_ss(self, seconds) -> str:
         hours = seconds // 3600
@@ -132,5 +137,5 @@ class AdSchedule(TwitchCore):
         try:
             self.backend.snooze_ad()
         except Exception as ex:
-            log.error(ex)
+            log.error(f"Failed to snooze next ad: {ex}")
             self.show_error(3)

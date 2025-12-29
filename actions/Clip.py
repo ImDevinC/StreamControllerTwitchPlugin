@@ -25,7 +25,7 @@ class Clip(TwitchCore):
                 id="clip",
                 ui_label="Clip",
                 default_event=Input.Key.Events.DOWN,
-                callback=self._on_clip
+                callback=self._on_clip,
             )
         )
 
@@ -33,5 +33,5 @@ class Clip(TwitchCore):
         try:
             self.backend.create_clip()
         except Exception as ex:
-            log.error(ex)
+            log.error(f"Failed to create clip: {ex}")
             self.show_error(3)

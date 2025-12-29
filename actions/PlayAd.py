@@ -22,15 +22,16 @@ class PlayAd(TwitchCore):
         self.has_configuration = True
 
     def create_generative_ui(self):
-        options = [SimpleComboRowItem(str(x), f"{x} seconds")
-                   for x in [30, 60, 90, 120]]
+        options = [
+            SimpleComboRowItem(str(x), f"{x} seconds") for x in [30, 60, 90, 120]
+        ]
         self._time_row = ComboRow(
             action_core=self,
             var_name="ad.duration",
             default_value=options[0],
             items=options,
             title="ad-options-dropdown",
-            complex_var_name=True
+            complex_var_name=True,
         )
 
     def get_config_rows(self):
@@ -42,14 +43,17 @@ class PlayAd(TwitchCore):
                 id="play-ad",
                 ui_label="Play Ad",
                 default_event=Input.Key.Events.DOWN,
-                callback=self._on_play_ad
+                callback=self._on_play_ad,
             )
         )
 
     def _on_play_ad(self, _):
+        time = None
         try:
             time = self._time_row.get_selected_item().get_value()
             self.backend.play_ad(int(time))
         except Exception as ex:
-            log.error(ex)
+            log.error(
+                f"Failed to play ad{f' (duration: {time}s)' if time else ''}: {ex}"
+            )
             self.show_error(3)

@@ -29,8 +29,7 @@ class ChatModeOptions(Enum):
 class ChatMode(TwitchCore):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.icon_keys = [Icons.FOLLOWER,
-                          Icons.SUBSCRIBER, Icons.EMOTE, Icons.SLOW]
+        self.icon_keys = [Icons.FOLLOWER, Icons.SUBSCRIBER, Icons.EMOTE, Icons.SLOW]
         self.current_icon = self.get_icon(Icons.FOLLOWER)
         self.icon_name = Icons.FOLLOWER
 
@@ -80,13 +79,16 @@ class ChatMode(TwitchCore):
 
     def _update_chat_mode(self):
         while self.get_is_present():
+            mode = None
             try:
                 chat_settings = self.backend.get_chat_settings()
                 mode = self._chat_select_row.get_selected_item().get_value()
                 enabled = chat_settings.get(mode)
                 self._update_icon(mode, enabled)
             except Exception as ex:
-                log.error(ex)
+                log.error(
+                    f"Failed to update chat mode status{f' for {mode}' if mode else ''}: {ex}"
+                )
                 self.show_error(3)
             sleep(5)
 
@@ -96,5 +98,5 @@ class ChatMode(TwitchCore):
             resp = self.backend.toggle_chat_mode(item)
             self._update_icon(item, resp)
         except Exception as ex:
-            log.error(ex)
+            log.error(f"Failed to toggle chat mode '{item}': {ex}")
             self.show_error(3)

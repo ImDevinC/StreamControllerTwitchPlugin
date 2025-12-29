@@ -25,6 +25,18 @@ from .actions.AdSchedule import AdSchedule
 
 
 class PluginTemplate(PluginBase):
+    """Twitch StreamController Plugin.
+
+    Provides integration with Twitch for StreamController, enabling actions like:
+    - Creating clips and stream markers
+    - Sending chat messages
+    - Displaying viewer counts
+    - Managing chat modes (follower-only, emote-only, slow mode, etc.)
+    - Playing ads and managing ad schedules
+
+    All Twitch API calls are rate-limited to prevent exceeding API limits.
+    """
+
     def get_selector_icon(self) -> Gtk.Widget:
         _, rendered = self.asset_manager.icons.get_asset_values("main")
         return Gtk.Image.new_from_pixbuf(image2pixbuf(rendered))

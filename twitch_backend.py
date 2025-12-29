@@ -24,7 +24,22 @@ from constants import (
 
 
 class RateLimiter:
-    """Thread-safe rate limiter using a sliding window algorithm."""
+    """Thread-safe rate limiter using a sliding window algorithm.
+
+    This decorator limits the number of function calls within a specified time period.
+    It uses a sliding window approach where old calls outside the time window are
+    automatically removed, and new calls are blocked if the limit is reached.
+
+    Args:
+        max_calls: Maximum number of calls allowed within the time period
+        period: Time period in seconds for the rate limit window
+
+    Example:
+        @RateLimiter(max_calls=100, period=60)
+        def api_call():
+            # This function will be limited to 100 calls per 60 seconds
+            pass
+    """
 
     def __init__(self, max_calls: int, period: float) -> None:
         self.max_calls: int = max_calls
@@ -106,6 +121,13 @@ def make_handler(plugin_backend: "Backend") -> type[BaseHTTPRequestHandler]:
 
 
 class Backend(BackendBase):
+    """Backend for Twitch API integration.
+
+    Handles authentication, API calls, and rate limiting for Twitch operations.
+    All API methods are automatically rate-limited to prevent exceeding Twitch's
+    API limits.
+    """
+
     def __init__(self) -> None:
         super().__init__()
         self.twitch: Optional[Client] = None
@@ -136,6 +158,14 @@ class Backend(BackendBase):
         super().on_disconnect(conn)
 
     def get_channel_id(self, user_name: str) -> Optional[str]:
+        """Get Twitch channel ID from username.
+
+        Args:
+            user_name: Twitch username to look up
+
+        Returns:
+            Channel ID if found, None otherwise. Results are cached for performance.
+        """
         if not user_name:
             return None
         if user_name in self.cached_channels:
@@ -154,6 +184,7 @@ class Backend(BackendBase):
         return None
 
     def create_clip(self) -> None:
+        """Create a clip of the current live stream."""
         if not self.twitch:
             return
         self.validate_auth()

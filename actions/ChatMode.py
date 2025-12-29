@@ -12,7 +12,7 @@ from GtkHelper.ComboRow import SimpleComboRowItem, BaseComboRowItem
 
 from loguru import logger as log
 
-from constants import (
+from ..constants import (
     CHAT_MODE_UPDATE_INTERVAL_SECONDS,
     ERROR_DISPLAY_DURATION_SECONDS,
 )

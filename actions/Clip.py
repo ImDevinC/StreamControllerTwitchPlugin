@@ -7,7 +7,7 @@ from .TwitchCore import TwitchCore
 from src.backend.PluginManager.EventAssigner import EventAssigner
 from src.backend.PluginManager.InputBases import Input
 
-from constants import ERROR_DISPLAY_DURATION_SECONDS
+from ..constants import ERROR_DISPLAY_DURATION_SECONDS
 
 
 class Icons(StrEnum):

@@ -10,7 +10,7 @@ from src.backend.PluginManager.InputBases import Input
 
 from loguru import logger as log
 
-from constants import VIEWER_UPDATE_INTERVAL_SECONDS
+from ..constants import VIEWER_UPDATE_INTERVAL_SECONDS
 
 
 class Icons(StrEnum):

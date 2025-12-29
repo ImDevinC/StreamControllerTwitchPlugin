@@ -9,7 +9,7 @@ from GtkHelper.GenerativeUI.EntryRow import EntryRow
 
 from loguru import logger as log
 
-from constants import ERROR_DISPLAY_DURATION_SECONDS
+from ..constants import ERROR_DISPLAY_DURATION_SECONDS
 
 
 class Icons(StrEnum):

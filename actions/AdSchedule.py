@@ -13,7 +13,7 @@ from src.backend.PluginManager.PluginSettings.Asset import Color
 
 from loguru import logger as log
 
-from constants import (
+from ..constants import (
     AD_SCHEDULE_FETCH_INTERVAL_SECONDS,
     AD_DISPLAY_UPDATE_INTERVAL_SECONDS,
     ERROR_DISPLAY_DURATION_SECONDS,

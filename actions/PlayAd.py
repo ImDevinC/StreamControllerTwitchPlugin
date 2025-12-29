@@ -9,7 +9,7 @@ from src.backend.PluginManager.InputBases import Input
 from GtkHelper.GenerativeUI.ComboRow import ComboRow
 from GtkHelper.ComboRow import SimpleComboRowItem, BaseComboRowItem
 
-from constants import ERROR_DISPLAY_DURATION_SECONDS
+from ..constants import ERROR_DISPLAY_DURATION_SECONDS
 
 
 class Icons(StrEnum):

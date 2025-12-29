@@ -11,6 +11,11 @@ from GtkHelper.ComboRow import SimpleComboRowItem, BaseComboRowItem
 
 from loguru import logger as log
 
+from constants import (
+    CHAT_MODE_UPDATE_INTERVAL_SECONDS,
+    ERROR_DISPLAY_DURATION_SECONDS,
+)
+
 
 class Icons(StrEnum):
     FOLLOWER = "follower_mode"
@@ -89,8 +94,8 @@ class ChatMode(TwitchCore):
                 log.error(
                     f"Failed to update chat mode status{f' for {mode}' if mode else ''}: {ex}"
                 )
-                self.show_error(3)
-            sleep(5)
+                self.show_error(ERROR_DISPLAY_DURATION_SECONDS)
+            sleep(CHAT_MODE_UPDATE_INTERVAL_SECONDS)
 
     def _on_toggle_chat(self, _):
         item = self._chat_select_row.get_selected_item().get_value()
@@ -99,4 +104,4 @@ class ChatMode(TwitchCore):
             self._update_icon(item, resp)
         except Exception as ex:
             log.error(f"Failed to toggle chat mode '{item}': {ex}")
-            self.show_error(3)
+            self.show_error(ERROR_DISPLAY_DURATION_SECONDS)

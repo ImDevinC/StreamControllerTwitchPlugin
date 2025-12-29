@@ -12,6 +12,12 @@ from src.backend.PluginManager.PluginSettings.Asset import Color
 
 from loguru import logger as log
 
+from constants import (
+    AD_SCHEDULE_FETCH_INTERVAL_SECONDS,
+    AD_DISPLAY_UPDATE_INTERVAL_SECONDS,
+    ERROR_DISPLAY_DURATION_SECONDS,
+)
+
 
 class Icons(StrEnum):
     DELAY = "delay"
@@ -74,7 +80,7 @@ class AdSchedule(TwitchCore):
     def _update_ad_display(self):
         """Consolidated update loop that fetches ad schedule and updates display."""
         last_fetch_time = datetime.now() - timedelta(
-            seconds=30
+            seconds=AD_SCHEDULE_FETCH_INTERVAL_SECONDS
         )  # Fetch immediately on start
 
         while self.get_is_present():
@@ -82,7 +88,9 @@ class AdSchedule(TwitchCore):
             now = datetime.now()
 
             # Fetch ad schedule every 30 seconds
-            if (now - last_fetch_time).total_seconds() >= 30:
+            if (
+                now - last_fetch_time
+            ).total_seconds() >= AD_SCHEDULE_FETCH_INTERVAL_SECONDS:
                 try:
                     schedule, snoozes = self.backend.get_next_ad()
                     self._next_ad = schedule
@@ -90,7 +98,7 @@ class AdSchedule(TwitchCore):
                     last_fetch_time = now
                 except Exception as ex:
                     log.error(f"Failed to get ad schedule from Twitch API: {ex}")
-                    self.show_error(3)
+                    self.show_error(ERROR_DISPLAY_DURATION_SECONDS)
 
             # Update display every second
             snooze_label = (
@@ -104,7 +112,7 @@ class AdSchedule(TwitchCore):
                 if self._next_ad < now:
                     self._update_background_color(Colors.DEFAULT)
                     GLib.idle_add(lambda: self.set_center_label(""))
-                    sleep(1)
+                    sleep(AD_DISPLAY_UPDATE_INTERVAL_SECONDS)
                     continue
                 diff = (self._next_ad - now).total_seconds()
                 time_label = self._convert_seconds_to_hh_mm_ss(diff)
@@ -123,7 +131,7 @@ class AdSchedule(TwitchCore):
             except Exception as ex:
                 log.error(f"Failed to update ad timer display: {ex}")
 
-            sleep(1)
+            sleep(AD_DISPLAY_UPDATE_INTERVAL_SECONDS)
 
     def _convert_seconds_to_hh_mm_ss(self, seconds) -> str:
         hours = seconds // 3600
@@ -138,4 +146,4 @@ class AdSchedule(TwitchCore):
             self.backend.snooze_ad()
         except Exception as ex:
             log.error(f"Failed to snooze next ad: {ex}")
-            self.show_error(3)
+            self.show_error(ERROR_DISPLAY_DURATION_SECONDS)

@@ -9,6 +9,8 @@ from src.backend.PluginManager.InputBases import Input
 
 from loguru import logger as log
 
+from constants import VIEWER_UPDATE_INTERVAL_SECONDS
+
 
 class Icons(StrEnum):
     VIEWERS = "view"
@@ -22,8 +24,7 @@ class ShowViewers(TwitchCore):
         self.icon_name = Icons.VIEWERS
 
     def on_ready(self):
-        Thread(target=self._update_viewers, daemon=True,
-               name="update_viewers").start()
+        Thread(target=self._update_viewers, daemon=True, name="update_viewers").start()
 
     def _update_viewers(self):
         while self.get_is_present():
@@ -31,4 +32,4 @@ class ShowViewers(TwitchCore):
             if not count:
                 count = "-"
             GLib.idle_add(lambda c=count: self.set_center_label(str(c)))
-            sleep(10)
+            sleep(VIEWER_UPDATE_INTERVAL_SECONDS)

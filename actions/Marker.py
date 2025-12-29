@@ -6,6 +6,8 @@ from .TwitchCore import TwitchCore
 from src.backend.PluginManager.EventAssigner import EventAssigner
 from src.backend.PluginManager.InputBases import Input
 
+from constants import ERROR_DISPLAY_DURATION_SECONDS
+
 
 class Icons(StrEnum):
     MARKER = "bookmark"
@@ -34,4 +36,4 @@ class Marker(TwitchCore):
             self.backend.create_marker()
         except Exception as ex:
             log.error(f"Failed to create stream marker: {ex}")
-            self.show_error(3)
+            self.show_error(ERROR_DISPLAY_DURATION_SECONDS)

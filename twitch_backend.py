@@ -10,6 +10,8 @@ from twitchpy.client import Client
 
 from streamcontroller_plugin_tools import BackendBase
 
+from constants import OAUTH_REDIRECT_URI, OAUTH_PORT
+
 
 def make_handler(plugin_backend: "Backend"):
     class AuthHandler(BaseHTTPRequestHandler):
@@ -163,7 +165,7 @@ class Backend(BackendBase):
         self.client_secret = client_secret
         params = {
             "client_id": client_id,
-            "redirect_uri": "http://localhost:3000/auth",
+            "redirect_uri": OAUTH_REDIRECT_URI,
             "response_type": "code",
             "scope": "user:write:chat channel:manage:broadcast moderator:manage:chat_settings clips:edit channel:read:subscriptions channel:edit:commercial channel:manage:ads channel:read:ads",
         }
@@ -179,9 +181,9 @@ class Backend(BackendBase):
 
         # Create new server
         try:
-            self.httpd = HTTPServer(("localhost", 3000), make_handler(self))
+            self.httpd = HTTPServer(("localhost", OAUTH_PORT), make_handler(self))
         except Exception as ex:
-            log.error(f"Failed to create HTTP server on port 3000: {ex}")
+            log.error(f"Failed to create HTTP server on port {OAUTH_PORT}: {ex}")
             self.auth_failed("Failed to start local authentication server")
             return
 
@@ -221,7 +223,7 @@ class Backend(BackendBase):
                 client_id=client_id,
                 client_secret=client_secret,
                 tokens_path=self.token_path,
-                redirect_uri="http://localhost:3000/auth",
+                redirect_uri=OAUTH_REDIRECT_URI,
                 authorization_code=auth_code,
             )
             users = self.twitch.get_users()

@@ -6,6 +6,8 @@ from .TwitchCore import TwitchCore
 from src.backend.PluginManager.EventAssigner import EventAssigner
 from src.backend.PluginManager.InputBases import Input
 
+from constants import ERROR_DISPLAY_DURATION_SECONDS
+
 
 class Icons(StrEnum):
     CLIP = "camera"
@@ -34,4 +36,4 @@ class Clip(TwitchCore):
             self.backend.create_clip()
         except Exception as ex:
             log.error(f"Failed to create clip: {ex}")
-            self.show_error(3)
+            self.show_error(ERROR_DISPLAY_DURATION_SECONDS)

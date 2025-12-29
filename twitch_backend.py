@@ -7,6 +7,8 @@ from datetime import datetime, timedelta
 from collections import deque
 from functools import wraps
 from time import sleep
+from typing import Callable, Any, Optional
+from collections.abc import Sequence
 
 from loguru import logger as log
 from twitchpy.client import Client
@@ -24,15 +26,15 @@ from constants import (
 class RateLimiter:
     """Thread-safe rate limiter using a sliding window algorithm."""
 
-    def __init__(self, max_calls: int, period: float):
-        self.max_calls = max_calls
-        self.period = period
-        self.calls = deque()
-        self.lock = threading.Lock()
+    def __init__(self, max_calls: int, period: float) -> None:
+        self.max_calls: int = max_calls
+        self.period: float = period
+        self.calls: deque[datetime] = deque()
+        self.lock: threading.Lock = threading.Lock()
 
-    def __call__(self, func):
+    def __call__(self, func: Callable[..., Any]) -> Callable[..., Any]:
         @wraps(func)
-        def wrapper(*args, **kwargs):
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
             with self.lock:
                 now = datetime.now()
                 # Remove calls outside the time window
@@ -67,9 +69,9 @@ class RateLimiter:
         return wrapper
 
 
-def make_handler(plugin_backend: "Backend"):
+def make_handler(plugin_backend: "Backend") -> type[BaseHTTPRequestHandler]:
     class AuthHandler(BaseHTTPRequestHandler):
-        def do_GET(self):
+        def do_GET(self) -> None:
             if not self.path.startswith("/auth"):
                 self.send_response(201)
                 return
@@ -104,23 +106,25 @@ def make_handler(plugin_backend: "Backend"):
 
 
 class Backend(BackendBase):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
-        self.twitch: Client = None
-        self.user_id: str = None
-        self.token_path: str = None
-        self.client_secret: str = None
-        self.client_id: str = None
-        self.httpd: HTTPServer = None
-        self.httpd_thread: threading.Thread = None
-        self.auth_code: str = None
-        self.cached_channels: dict = {}
-        self.rate_limiter = RateLimiter(RATE_LIMIT_CALLS, RATE_LIMIT_PERIOD)
+        self.twitch: Optional[Client] = None
+        self.user_id: Optional[str] = None
+        self.token_path: Optional[str] = None
+        self.client_secret: Optional[str] = None
+        self.client_id: Optional[str] = None
+        self.httpd: Optional[HTTPServer] = None
+        self.httpd_thread: Optional[threading.Thread] = None
+        self.auth_code: Optional[str] = None
+        self.cached_channels: dict[str, str] = {}
+        self.rate_limiter: RateLimiter = RateLimiter(
+            RATE_LIMIT_CALLS, RATE_LIMIT_PERIOD
+        )
 
     def set_token_path(self, path: str) -> None:
         self.token_path = path
 
-    def on_disconnect(self, conn):
+    def on_disconnect(self, conn: Any) -> None:
         if self.httpd is not None:
             try:
                 self.httpd.shutdown()
@@ -131,14 +135,14 @@ class Backend(BackendBase):
         self.httpd_thread = None
         super().on_disconnect(conn)
 
-    def get_channel_id(self, user_name: str) -> str | None:
+    def get_channel_id(self, user_name: str) -> Optional[str]:
         if not user_name:
-            return
+            return None
         if user_name in self.cached_channels:
             return self.cached_channels[user_name]
 
         @self.rate_limiter
-        def _get_users():
+        def _get_users() -> Sequence[Any]:
             return self.twitch.get_users(None, [user_name])
 
         users = _get_users()
@@ -155,7 +159,7 @@ class Backend(BackendBase):
         self.validate_auth()
 
         @self.rate_limiter
-        def _create_clip():
+        def _create_clip() -> Any:
             return self.twitch.create_clip(self.user_id)
 
         _create_clip()
@@ -166,18 +170,18 @@ class Backend(BackendBase):
         self.validate_auth()
 
         @self.rate_limiter
-        def _create_marker():
+        def _create_marker() -> Any:
             return self.twitch.create_stream_marker(self.user_id)
 
         _create_marker()
 
     def get_viewers(self) -> str:
         if not self.twitch:
-            return
+            return ""
         self.validate_auth()
 
         @self.rate_limiter
-        def _get_streams():
+        def _get_streams() -> Sequence[Any]:
             return self.twitch.get_streams(first=1, user_id=self.user_id)
 
         streams = _get_streams()
@@ -187,15 +191,15 @@ class Backend(BackendBase):
 
     def toggle_chat_mode(self, mode: str) -> bool:
         if not self.twitch:
-            return
+            return False
         self.validate_auth()
 
         @self.rate_limiter
-        def _get_settings():
+        def _get_settings() -> Any:
             return self.twitch.get_chat_settings(self.user_id, self.user_id)
 
         @self.rate_limiter
-        def _update_settings(updated_value):
+        def _update_settings(updated_value: bool) -> Any:
             return self.twitch.update_chat_settings(
                 self.user_id, self.user_id, **{mode: updated_value}
             )
@@ -205,13 +209,13 @@ class Backend(BackendBase):
         _update_settings(updated)
         return updated
 
-    def get_chat_settings(self) -> dict:
+    def get_chat_settings(self) -> dict[str, bool]:
         if not self.twitch:
             return {}
         self.validate_auth()
 
         @self.rate_limiter
-        def _get_settings():
+        def _get_settings() -> Any:
             return self.twitch.get_chat_settings(self.user_id, self.user_id)
 
         current = _get_settings()
@@ -229,7 +233,7 @@ class Backend(BackendBase):
         channel_id = self.get_channel_id(user_name) or self.user_id
 
         @self.rate_limiter
-        def _send_message():
+        def _send_message() -> Any:
             return self.twitch.send_chat_message(channel_id, self.user_id, message)
 
         _send_message()
@@ -240,7 +244,7 @@ class Backend(BackendBase):
         self.validate_auth()
 
         @self.rate_limiter
-        def _snooze_ad():
+        def _snooze_ad() -> Any:
             return self.twitch.snooze_next_ad(self.user_id)
 
         _snooze_ad()
@@ -251,7 +255,7 @@ class Backend(BackendBase):
         self.validate_auth()
 
         @self.rate_limiter
-        def _start_commercial():
+        def _start_commercial() -> Any:
             return self.twitch.start_commercial(self.user_id, length)
 
         _start_commercial()
@@ -262,7 +266,7 @@ class Backend(BackendBase):
         self.validate_auth()
 
         @self.rate_limiter
-        def _get_ad_schedule():
+        def _get_ad_schedule() -> Any:
             return self.twitch.get_ad_schedule(self.user_id)
 
         schedule = _get_ad_schedule()
@@ -323,7 +327,7 @@ class Backend(BackendBase):
         try:
 
             @self.rate_limiter
-            def _validate():
+            def _validate() -> Sequence[Any]:
                 return self.twitch.get_streams(first=1, user_id=self.user_id)
 
             _ = _validate()
@@ -343,7 +347,7 @@ class Backend(BackendBase):
             )
 
             @self.rate_limiter
-            def _get_users():
+            def _get_users() -> Sequence[Any]:
                 return self.twitch.get_users()
 
             users = _get_users()

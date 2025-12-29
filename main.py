@@ -1,6 +1,7 @@
 import os
 import globals as gl
 import json
+from typing import Optional, Callable, Any
 
 from loguru import logger
 from gi.repository import Gtk
@@ -28,7 +29,7 @@ class PluginTemplate(PluginBase):
         _, rendered = self.asset_manager.icons.get_asset_values("main")
         return Gtk.Image.new_from_pixbuf(image2pixbuf(rendered))
 
-    def _add_icons(self):
+    def _add_icons(self) -> None:
         self.add_icon("main", self.get_asset_path("glitch_flat_purple.png"))
         self.add_icon("chat", self.get_asset_path("chat.png"))
         self.add_icon("camera", self.get_asset_path("camera.png"))
@@ -41,19 +42,22 @@ class PluginTemplate(PluginBase):
         self.add_icon("money", self.get_asset_path("money.png"))
         self.add_icon("delay", self.get_asset_path("delay.png"))
 
-    def _add_colors(self):
+    def _add_colors(self) -> None:
         self.add_color("default", [0, 0, 0, 0])
         self.add_color("warning", [255, 244, 79, 255])
         self.add_color("alert", [224, 102, 102, 255])
 
-    def _register_actions(self):
+    def _register_actions(self) -> None:
         self.message_action_holder = ActionHolder(
-            plugin_base=self, action_base=SendMessage, action_id_suffix="SendMessage", action_name="Send Chat Message",
+            plugin_base=self,
+            action_base=SendMessage,
+            action_id_suffix="SendMessage",
+            action_name="Send Chat Message",
             action_support={
                 Input.Key: ActionInputSupport.SUPPORTED,
                 Input.Dial: ActionInputSupport.UNTESTED,
                 Input.Touchscreen: ActionInputSupport.UNTESTED,
-            }
+            },
         )
         self.add_action_holder(self.message_action_holder)
 
@@ -135,7 +139,7 @@ class PluginTemplate(PluginBase):
         )
         self.add_action_holder(self.ad_schedule_action_holder)
 
-    def _setup_backend(self):
+    def _setup_backend(self) -> bool:
         backend_path = os.path.join(self.PATH, "twitch_backend.py")
         self.launch_backend(
             backend_path=backend_path,
@@ -144,8 +148,7 @@ class PluginTemplate(PluginBase):
         )
         backend_ready = self.wait_for_backend(tries=5)
         if not backend_ready:
-            logger.error(
-                "Failed to initialize Twitch backend after 5 attempts")
+            logger.error("Failed to initialize Twitch backend after 5 attempts")
 
         settings = self.get_settings()
         client_id = settings.get("client_id", "")
@@ -161,15 +164,15 @@ class PluginTemplate(PluginBase):
             self.backend.auth_with_code(client_id, client_secret, auth_code)
         return True
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(use_legacy_locale=False)
 
         self.has_plugin_settings = True
         self.lm = self.locale_manager
         self.lm.set_to_os_default()
-        self._settings_manager = PluginSettings(self)
-        self.auth_callback_fn: callable = None
-        self.backend_initialized = False
+        self._settings_manager: PluginSettings = PluginSettings(self)
+        self.auth_callback_fn: Optional[Callable[[bool, str], None]] = None
+        self.backend_initialized: bool = False
 
         self._add_icons()
         self._add_colors()
@@ -214,5 +217,5 @@ class PluginTemplate(PluginBase):
         if self.auth_callback_fn:
             self.auth_callback_fn(success, message)
 
-    def get_settings_area(self):
+    def get_settings_area(self) -> Any:
         return self._settings_manager.get_settings_area()

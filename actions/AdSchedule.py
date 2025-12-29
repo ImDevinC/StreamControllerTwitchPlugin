@@ -2,7 +2,9 @@ from enum import StrEnum, Enum
 from datetime import datetime, timedelta
 from threading import Thread
 from time import sleep
+from typing import Any, List
 
+from gi.repository import GLib
 from GtkHelper.GenerativeUI.SwitchRow import SwitchRow
 from .TwitchCore import TwitchCore
 from src.backend.PluginManager.EventAssigner import EventAssigner
@@ -10,6 +12,12 @@ from src.backend.PluginManager.InputBases import Input
 from src.backend.PluginManager.PluginSettings.Asset import Color
 
 from loguru import logger as log
+
+from ..constants import (
+    AD_SCHEDULE_FETCH_INTERVAL_SECONDS,
+    AD_DISPLAY_UPDATE_INTERVAL_SECONDS,
+    ERROR_DISPLAY_DURATION_SECONDS,
+)
 
 
 class Icons(StrEnum):
@@ -23,7 +31,7 @@ class Colors(StrEnum):
 
 
 class AdSchedule(TwitchCore):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.icon_keys = [Icons.DELAY]
         self.current_icon = self.get_icon(Icons.DELAY)
@@ -34,14 +42,13 @@ class AdSchedule(TwitchCore):
         self._next_ad: datetime = datetime.now()
         self._snoozes: int = -1
 
-    def on_ready(self):
+    def on_ready(self) -> None:
         super().on_ready()
         Thread(
-            target=self._get_ad_schedule, daemon=True, name="get_ad_schedule").start()
-        Thread(
-            target=self._update_ad_timer, daemon=True, name="update_ad_timer").start()
+            target=self._update_ad_display, daemon=True, name="update_ad_display"
+        ).start()
 
-    def create_event_assigners(self):
+    def create_event_assigners(self) -> None:
         self.event_manager.add_event_assigner(
             EventAssigner(
                 id="snooze-ad",
@@ -51,75 +58,93 @@ class AdSchedule(TwitchCore):
             )
         )
 
-    def create_generative_ui(self):
+    def create_generative_ui(self) -> None:
         self._skip_ad_switch = SwitchRow(
             action_core=self,
             var_name="ad.snooze",
             default_value=True,
             title="ad-snooze",
             subtitle="Snoozes ad for 5 minutes when pushed",
-            complex_var_name=True
+            complex_var_name=True,
         )
 
-    def get_config_rows(self):
+    def get_config_rows(self) -> List[Any]:
         return [self._skip_ad_switch.widget]
 
-    def _update_background_color(self, color: str):
-        self.current_color = self.get_color(color)
-        self.display_color()
+    def _update_background_color(self, color: str) -> None:
+        def _update():
+            self.current_color = self.get_color(color)
+            self.display_color()
 
-    def _update_ad_timer(self):
+        GLib.idle_add(_update)
+
+    def _update_ad_display(self) -> None:
+        """Consolidated update loop that fetches ad schedule and updates display."""
+        last_fetch_time = datetime.now() - timedelta(
+            seconds=AD_SCHEDULE_FETCH_INTERVAL_SECONDS
+        )  # Fetch immediately on start
+
         while self.get_is_present():
             self.display_color()
             now = datetime.now()
-            self.set_bottom_label(
-                str(self._snoozes) if (self._snoozes >= 0 and self._skip_ad_switch.get_active()) else "")
+
+            # Fetch ad schedule every 30 seconds
+            if (
+                now - last_fetch_time
+            ).total_seconds() >= AD_SCHEDULE_FETCH_INTERVAL_SECONDS:
+                try:
+                    schedule, snoozes = self.backend.get_next_ad()
+                    self._next_ad = schedule
+                    self._snoozes = snoozes
+                    last_fetch_time = now
+                except Exception as ex:
+                    log.error(f"Failed to get ad schedule from Twitch API: {ex}")
+                    self.show_error(ERROR_DISPLAY_DURATION_SECONDS)
+
+            # Update display every second
+            snooze_label = (
+                str(self._snoozes)
+                if (self._snoozes >= 0 and self._skip_ad_switch.get_active())
+                else ""
+            )
+            GLib.idle_add(lambda: self.set_bottom_label(snooze_label))
+
             try:
                 if self._next_ad < now:
                     self._update_background_color(Colors.DEFAULT)
-                    self.set_center_label("")
+                    GLib.idle_add(lambda: self.set_center_label(""))
+                    sleep(AD_DISPLAY_UPDATE_INTERVAL_SECONDS)
                     continue
                 diff = (self._next_ad - now).total_seconds()
-                self.set_center_label(self._convert_seconds_to_hh_mm_ss(diff))
+                time_label = self._convert_seconds_to_hh_mm_ss(diff)
+                GLib.idle_add(lambda: self.set_center_label(time_label))
                 if diff <= 60:
                     self._update_background_color(Colors.ALERT)
-                    continue
-                if diff <= 300:
+                elif diff <= 300:
                     self._update_background_color(Colors.WARNING)
-                    continue
-                self._update_background_color(Colors.DEFAULT)
+                else:
+                    self._update_background_color(Colors.DEFAULT)
             except TypeError:
                 # There is a known issue where the default timestamp returned from
                 # the twitch API is an invalid datetime object and causes an error.
                 # Ignoring it here
                 pass
             except Exception as ex:
-                log.error(ex)
-            sleep(1)
+                log.error(f"Failed to update ad timer display: {ex}")
 
-    def _get_ad_schedule(self):
-        while self.get_is_present():
-            try:
-                schedule, snoozes = self.backend.get_next_ad()
-                self._next_ad = schedule
-                self._snoozes = snoozes
-                self._update_ad_timer()
-            except Exception as ex:
-                log.error(ex)
-                self.show_error(3)
-            sleep(30)
+            sleep(AD_DISPLAY_UPDATE_INTERVAL_SECONDS)
 
-    def _convert_seconds_to_hh_mm_ss(self, seconds) -> str:
+    def _convert_seconds_to_hh_mm_ss(self, seconds: float) -> str:
         hours = seconds // 3600
         minutes = (seconds % 3600) // 60
         remaining_seconds = seconds % 60
         return f"{int(hours):02}:{int(minutes):02}:{int(remaining_seconds):02}"
 
-    def _on_snooze_ad(self, _):
+    def _on_snooze_ad(self, _: Any) -> None:
         if not self._skip_ad_switch.get_active():
             return
         try:
             self.backend.snooze_ad()
         except Exception as ex:
-            log.error(ex)
-            self.show_error(3)
+            log.error(f"Failed to snooze next ad: {ex}")
+            self.show_error(ERROR_DISPLAY_DURATION_SECONDS)

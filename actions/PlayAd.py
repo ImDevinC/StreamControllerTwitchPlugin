@@ -1,4 +1,5 @@
 from enum import StrEnum, Enum
+from typing import Any, List, Optional
 
 from loguru import logger as log
 
@@ -8,48 +9,55 @@ from src.backend.PluginManager.InputBases import Input
 from GtkHelper.GenerativeUI.ComboRow import ComboRow
 from GtkHelper.ComboRow import SimpleComboRowItem, BaseComboRowItem
 
+from ..constants import ERROR_DISPLAY_DURATION_SECONDS
+
 
 class Icons(StrEnum):
     AD = "money"
 
 
 class PlayAd(TwitchCore):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.icon_keys = [Icons.AD]
         self.current_icon = self.get_icon(Icons.AD)
         self.icon_name = Icons.AD
         self.has_configuration = True
 
-    def create_generative_ui(self):
-        options = [SimpleComboRowItem(str(x), f"{x} seconds")
-                   for x in [30, 60, 90, 120]]
+    def create_generative_ui(self) -> None:
+        options = [
+            SimpleComboRowItem(str(x), f"{x} seconds") for x in [30, 60, 90, 120]
+        ]
         self._time_row = ComboRow(
             action_core=self,
             var_name="ad.duration",
             default_value=options[0],
             items=options,
             title="ad-options-dropdown",
-            complex_var_name=True
+            complex_var_name=True,
         )
 
-    def get_config_rows(self):
+    def get_config_rows(self) -> List[Any]:
         return [self._time_row.widget]
 
-    def create_event_assigners(self):
+    def create_event_assigners(self) -> None:
         self.event_manager.add_event_assigner(
             EventAssigner(
                 id="play-ad",
                 ui_label="Play Ad",
                 default_event=Input.Key.Events.DOWN,
-                callback=self._on_play_ad
+                callback=self._on_play_ad,
             )
         )
 
-    def _on_play_ad(self, _):
+    def _on_play_ad(self, _: Any) -> None:
+        time: Optional[str] = None
         try:
             time = self._time_row.get_selected_item().get_value()
-            self.backend.play_ad(int(time))
+            if time:
+                self.backend.play_ad(int(time))
         except Exception as ex:
-            log.error(ex)
-            self.show_error(3)
+            log.error(
+                f"Failed to play ad{f' (duration: {time}s)' if time else ''}: {ex}"
+            )
+            self.show_error(ERROR_DISPLAY_DURATION_SECONDS)

@@ -1,10 +1,15 @@
 # StreamController Twitch Integration
-This plugin adds the ability to interact with your Twitch stream in a variety of ways. Currently supported functions:
+This plugin adds the ability to interact with your Twitch stream in a variety of ways.
 
-* Create stream marker
-* Send a message to your stream
-* See number of viewers on your stream
-* Toggle Follower Only, Subscriber Only, Emote Only, and Slow Mode
+## Available Actions
+
+- **Marker** - Create a stream marker to highlight important moments during your broadcast
+- **SendMessage** - Send a chat message to a specified Twitch channel
+- **ShowViewers** - Display the current number of viewers watching your stream
+- **ChatMode** - Toggle chat restrictions including Follower Only, Subscriber Only, Emote Only, and Slow Mode
+- **Clip** - Create a clip of the current moment in your stream
+- **PlayAd** - Run an ad break with configurable duration (30, 60, 90, or 120 seconds)
+- **AdSchedule** - Display countdown to next scheduled ad with color-coded alerts and snooze capability
 
 ## Setup
 This plugin does require you to create a Twitch app in your account. This can be done at https://dev.twitch.tv/console/apps/create. Name

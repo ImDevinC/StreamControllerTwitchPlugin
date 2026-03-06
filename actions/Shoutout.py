@@ -13,15 +13,15 @@ from ..constants import ERROR_DISPLAY_DURATION_SECONDS
 
 
 class Icons(StrEnum):
-    CHAT = "chat"
+    SHOUTOUT = "shoutout"
 
 
 class Shoutout(TwitchCore):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-        self.icon_keys = [Icons.CHAT]
-        self.current_icon = self.get_icon(Icons.CHAT)
-        self.icon_name = Icons.CHAT
+        self.icon_keys = [Icons.SHOUTOUT]
+        self.current_icon = self.get_icon(Icons.SHOUTOUT)
+        self.icon_name = Icons.SHOUTOUT
         self.has_configuration = True
 
     def create_event_assigners(self) -> None:

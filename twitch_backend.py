@@ -303,6 +303,34 @@ class Backend(BackendBase):
         schedule = _get_ad_schedule()
         return schedule.next_ad_at, schedule.snooze_count
 
+    def send_shoutout(self, target_username: str) -> None:
+        """Send a shoutout to the specified user.
+
+        Args:
+            target_username: The username of the broadcaster to shout out
+
+        Raises:
+            Exception: If the user is not found or the shoutout fails
+        """
+        if not self.twitch:
+            raise Exception("Not authenticated")
+        self.validate_auth()
+
+        # Resolve username to user ID
+        target_id = self.get_channel_id(target_username)
+        if not target_id:
+            raise Exception(f"User '{target_username}' not found")
+
+        @self.rate_limiter
+        def _send_shoutout() -> None:
+            return self.twitch.send_a_shoutout(
+                from_broadcaster_id=self.user_id,
+                to_broadcaster_id=target_id,
+                moderator_id=self.user_id,
+            )
+
+        _send_shoutout()
+
     def update_client_credentials(self, client_id: str, client_secret: str) -> None:
         if None in (client_id, client_secret) or "" in (client_id, client_secret):
             return
@@ -312,7 +340,7 @@ class Backend(BackendBase):
             "client_id": client_id,
             "redirect_uri": OAUTH_REDIRECT_URI,
             "response_type": "code",
-            "scope": "user:write:chat channel:manage:broadcast moderator:manage:chat_settings clips:edit channel:read:subscriptions channel:edit:commercial channel:manage:ads channel:read:ads",
+            "scope": "user:write:chat channel:manage:broadcast moderator:manage:chat_settings clips:edit channel:read:subscriptions channel:edit:commercial channel:manage:ads channel:read:ads moderator:manage:shoutouts",
         }
         encoded_params = urlencode(params)
 

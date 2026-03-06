@@ -54,6 +54,7 @@ class PluginTemplate(PluginBase):
         self.add_icon("slow_mode", self.get_asset_path("slow.png"))
         self.add_icon("money", self.get_asset_path("money.png"))
         self.add_icon("delay", self.get_asset_path("delay.png"))
+        self.add_icon("shoutout", self.get_asset_path("shoutout.png"))
 
     def _add_colors(self) -> None:
         self.add_color("default", [0, 0, 0, 0])

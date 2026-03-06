@@ -5,6 +5,7 @@ ad-snooze-subtitle;Snoozes ad for 5 minutes when pushed
 chat-channel-id;Twitch Channel to send message to
 chat-message-text;Text to send
 chat-toggle-dropdown;Chat Mode
+shoutout-username;Username to Shout Out
 ;;
 actions.base.credentials.authenticated;Authenticated successfully
 actions.base.credentials.failed;Authenication failed

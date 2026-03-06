@@ -22,6 +22,7 @@ from .actions.Marker import Marker
 from .actions.ChatMode import ChatMode
 from .actions.PlayAd import PlayAd
 from .actions.AdSchedule import AdSchedule
+from .actions.Shoutout import Shoutout
 
 
 class PluginTemplate(PluginBase):
@@ -29,7 +30,7 @@ class PluginTemplate(PluginBase):
 
     Provides integration with Twitch for StreamController, enabling actions like:
     - Creating clips and stream markers
-    - Sending chat messages
+    - Sending chat messages and shoutouts
     - Displaying viewer counts
     - Managing chat modes (follower-only, emote-only, slow mode, etc.)
     - Playing ads and managing ad schedules
@@ -150,6 +151,19 @@ class PluginTemplate(PluginBase):
             },
         )
         self.add_action_holder(self.ad_schedule_action_holder)
+
+        self.shoutout_action_holder = ActionHolder(
+            plugin_base=self,
+            action_base=Shoutout,
+            action_id_suffix="Shoutout",
+            action_name="Shoutout",
+            action_support={
+                Input.Key: ActionInputSupport.SUPPORTED,
+                Input.Dial: ActionInputSupport.UNTESTED,
+                Input.Touchscreen: ActionInputSupport.UNTESTED,
+            },
+        )
+        self.add_action_holder(self.shoutout_action_holder)
 
     def _setup_backend(self) -> bool:
         backend_path = os.path.join(self.PATH, "twitch_backend.py")

@@ -1,3 +1,10 @@
+> [!NOTE]
+> 2026/06/01
+> I no longer use this plugin, and do not have a very effective way to validate/test changes.
+> As such, this repo is being archived. I would encourage you to check the [StreamController-Store](https://github.com/StreamController/StreamController-Store)
+> for a forked/updated version.
+
+
 # StreamController Twitch Integration
 This plugin adds the ability to interact with your Twitch stream in a variety of ways.
 
